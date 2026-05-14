@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RoleModelServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.orchestration.service.impl</a> &gt; <span class="el_source">RoleModelServiceImpl.java</span></div><h1>RoleModelServiceImpl.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.orchestration.service.impl;
+
+import com.aiworkflow.workmanagement.orchestration.domain.AgentRole;
+import com.aiworkflow.workmanagement.orchestration.domain.RoleModelReport;
+import com.aiworkflow.workmanagement.orchestration.domain.WorkTypeAssociations;
+import com.aiworkflow.workmanagement.orchestration.service.RoleModelService;
+import com.aiworkflow.workmanagement.orchestration.service.RoleRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+/**
+ * Discovers roles at startup and writes a startup report.
+ */
+@Component
+public class RoleModelServiceImpl implements RoleModelService, ApplicationRunner {
+
+<span class="fc" id="L29">    private static final Logger logger = LoggerFactory.getLogger(RoleModelServiceImpl.class);</span>
+<span class="fc" id="L30">    private static final Path DEFAULT_ROLES_DIR = Path.of(&quot;.agent&quot;, &quot;roles&quot;);</span>
+<span class="fc" id="L31">    private static final Path REPORT_PATH = Path.of(&quot;logs&quot;, &quot;role-model-startup-report.md&quot;);</span>
+
+    private final RoleRegistry roleRegistry;
+    private final RoleFileParser roleFileParser;
+    private final RoleStartupReportWriter reportWriter;
+
+<span class="fc" id="L37">    public RoleModelServiceImpl(RoleRegistry roleRegistry) {</span>
+<span class="fc" id="L38">        this.roleRegistry = roleRegistry;</span>
+<span class="fc" id="L39">        this.roleFileParser = new RoleFileParser();</span>
+<span class="fc" id="L40">        this.reportWriter = new RoleStartupReportWriter();</span>
+<span class="fc" id="L41">    }</span>
+
+    @Override
+    public RoleModelReport discoverRoles() {
+<span class="fc" id="L45">        return discoverRoles(DEFAULT_ROLES_DIR);</span>
+    }
+
+    @Override
+    public RoleModelReport discoverRoles(Path rolesDirectory) {
+<span class="fc" id="L50">        List&lt;String&gt; warnings = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L51">        List&lt;RoleFileParser.RoleKeywords&gt; parsedRoles = new ArrayList&lt;&gt;();</span>
+
+<span class="pc bpc" id="L53" title="2 of 4 branches missed.">        if (rolesDirectory == null || !Files.exists(rolesDirectory)) {</span>
+<span class="nc" id="L54">            warnings.add(&quot;Roles directory not found: &quot; + rolesDirectory);</span>
+<span class="nc" id="L55">            return new RoleModelReport(List.of(), Map.of(), new WorkTypeAssociations(Map.of()), warnings, REPORT_PATH);</span>
+        }
+
+        try {
+<span class="fc" id="L59">            try (var stream = Files.walk(rolesDirectory)) {</span>
+<span class="fc" id="L60">                List&lt;Path&gt; roleFiles = stream</span>
+<span class="fc" id="L61">                    .filter(path -&gt; path.getFileName().toString().equalsIgnoreCase(&quot;ROLE.md&quot;))</span>
+<span class="fc" id="L62">                    .sorted()</span>
+<span class="fc" id="L63">                    .toList();</span>
+
+<span class="fc bfc" id="L65" title="All 2 branches covered.">                for (Path roleFile : roleFiles) {</span>
+<span class="fc" id="L66">                    RoleFileParser.RoleKeywords roleKeywords = roleFileParser.parse(roleFile);</span>
+<span class="fc" id="L67">                    parsedRoles.add(roleKeywords);</span>
+<span class="fc" id="L68">                    roleRegistry.register(roleKeywords.role());</span>
+<span class="fc" id="L69">                }</span>
+            }
+<span class="nc" id="L71">        } catch (IOException e) {</span>
+<span class="nc" id="L72">            warnings.add(&quot;Failed to scan roles: &quot; + e.getMessage());</span>
+<span class="fc" id="L73">        }</span>
+
+<span class="fc" id="L75">        Map&lt;String, List&lt;String&gt;&gt; keywordMap = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        for (RoleFileParser.RoleKeywords entry : parsedRoles) {</span>
+<span class="fc" id="L77">            AgentRole role = entry.role();</span>
+<span class="fc" id="L78">            keywordMap.put(role.getName(), entry.keywords());</span>
+<span class="fc" id="L79">        }</span>
+
+<span class="fc" id="L81">        List&lt;RoleFileParser.RoleKeywords&gt; sortedRoles = parsedRoles.stream()</span>
+<span class="fc" id="L82">            .sorted((a, b) -&gt; a.role().getName().compareToIgnoreCase(b.role().getName()))</span>
+<span class="fc" id="L83">            .toList();</span>
+
+<span class="fc" id="L85">        WorkTypeAssociations associations = WorkTypeAssociations.fromRoleKeywords(keywordMap);</span>
+<span class="fc" id="L86">        RoleModelReport report = new RoleModelReport(</span>
+<span class="fc" id="L87">            sortedRoles.stream().map(RoleFileParser.RoleKeywords::role).collect(Collectors.toList()),</span>
+            keywordMap,
+            associations,
+            warnings,
+            REPORT_PATH
+        );
+
+        try {
+<span class="fc" id="L95">            reportWriter.writeReport(report);</span>
+<span class="nc" id="L96">        } catch (IOException e) {</span>
+<span class="nc" id="L97">            logger.warn(&quot;Failed to write role model report: {}&quot;, e.getMessage());</span>
+<span class="fc" id="L98">        }</span>
+
+<span class="fc" id="L100">        return report;</span>
+    }
+
+    @Override
+    public void run(ApplicationArguments args) {
+<span class="fc" id="L105">        logger.info(&quot;Starting role discovery for RoleModelService&quot;);</span>
+<span class="fc" id="L106">        discoverRoles();</span>
+<span class="fc" id="L107">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StoryCreateRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.api.dto</a> &gt; <span class="el_source">StoryCreateRequest.java</span></div><h1>StoryCreateRequest.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.api.dto;
+
+import com.aiworkflow.workmanagement.domain.model.PrioritizationState;
+import com.aiworkflow.workmanagement.domain.model.WorkflowState;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+import java.util.List;
+
+<span class="fc" id="L10">public class StoryCreateRequest {</span>
+    @NotBlank
+    private String storyId;
+    @NotBlank
+    private String title;
+    @NotBlank
+    private String summary;
+    private String description;
+    @NotBlank
+    private String author;
+    private WorkflowState initialState;
+    @NotNull
+    private PrioritizationState prioritization;
+    private List&lt;String&gt; acceptanceCriteria;
+    private List&lt;String&gt; tags;
+    private Integer estimatedEffort;
+
+    public String getStoryId() {
+<span class="fc" id="L28">        return storyId;</span>
+    }
+
+    public void setStoryId(String storyId) {
+<span class="fc" id="L32">        this.storyId = storyId;</span>
+<span class="fc" id="L33">    }</span>
+
+    public String getTitle() {
+<span class="fc" id="L36">        return title;</span>
+    }
+
+    public void setTitle(String title) {
+<span class="fc" id="L40">        this.title = title;</span>
+<span class="fc" id="L41">    }</span>
+
+    public String getSummary() {
+<span class="fc" id="L44">        return summary;</span>
+    }
+
+    public void setSummary(String summary) {
+<span class="fc" id="L48">        this.summary = summary;</span>
+<span class="fc" id="L49">    }</span>
+
+    public String getDescription() {
+<span class="fc" id="L52">        return description;</span>
+    }
+
+    public void setDescription(String description) {
+<span class="fc" id="L56">        this.description = description;</span>
+<span class="fc" id="L57">    }</span>
+
+    public String getAuthor() {
+<span class="fc" id="L60">        return author;</span>
+    }
+
+    public void setAuthor(String author) {
+<span class="fc" id="L64">        this.author = author;</span>
+<span class="fc" id="L65">    }</span>
+
+    public WorkflowState getInitialState() {
+<span class="fc" id="L68">        return initialState;</span>
+    }
+
+    public void setInitialState(WorkflowState initialState) {
+<span class="fc" id="L72">        this.initialState = initialState;</span>
+<span class="fc" id="L73">    }</span>
+
+    public PrioritizationState getPrioritization() {
+<span class="fc" id="L76">        return prioritization;</span>
+    }
+
+    public void setPrioritization(PrioritizationState prioritization) {
+<span class="fc" id="L80">        this.prioritization = prioritization;</span>
+<span class="fc" id="L81">    }</span>
+
+    public List&lt;String&gt; getAcceptanceCriteria() {
+<span class="fc" id="L84">        return acceptanceCriteria;</span>
+    }
+
+    public void setAcceptanceCriteria(List&lt;String&gt; acceptanceCriteria) {
+<span class="fc" id="L88">        this.acceptanceCriteria = acceptanceCriteria;</span>
+<span class="fc" id="L89">    }</span>
+
+    public List&lt;String&gt; getTags() {
+<span class="fc" id="L92">        return tags;</span>
+    }
+
+    public void setTags(List&lt;String&gt; tags) {
+<span class="fc" id="L96">        this.tags = tags;</span>
+<span class="fc" id="L97">    }</span>
+
+    public Integer getEstimatedEffort() {
+<span class="fc" id="L100">        return estimatedEffort;</span>
+    }
+
+    public void setEstimatedEffort(Integer estimatedEffort) {
+<span class="fc" id="L104">        this.estimatedEffort = estimatedEffort;</span>
+<span class="fc" id="L105">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

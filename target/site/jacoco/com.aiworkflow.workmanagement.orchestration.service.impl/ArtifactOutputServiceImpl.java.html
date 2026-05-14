@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArtifactOutputServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.orchestration.service.impl</a> &gt; <span class="el_source">ArtifactOutputServiceImpl.java</span></div><h1>ArtifactOutputServiceImpl.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.orchestration.service.impl;
+
+import com.aiworkflow.workmanagement.application.service.ActivityLogger;
+import com.aiworkflow.workmanagement.domain.model.Artifact;
+import com.aiworkflow.workmanagement.domain.model.Story;
+import com.aiworkflow.workmanagement.domain.model.WorkspaceConfig;
+import com.aiworkflow.workmanagement.domain.repository.StoryRepository;
+import com.aiworkflow.workmanagement.domain.valueobject.ArtifactName;
+import com.aiworkflow.workmanagement.domain.valueobject.StoryId;
+import com.aiworkflow.workmanagement.orchestration.domain.ArtifactReference;
+import com.aiworkflow.workmanagement.orchestration.domain.OrchestrationRequest;
+import com.aiworkflow.workmanagement.orchestration.domain.OrchestrationResult;
+import com.aiworkflow.workmanagement.orchestration.exception.ArtifactWriteException;
+import com.aiworkflow.workmanagement.orchestration.service.ArtifactOutputService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.Map;
+
+/**
+ * Implementation of {@link ArtifactOutputService}.
+ * &lt;p&gt;
+ * This service writes orchestration artifacts to the filesystem following
+ * the naming convention: {name}__{role}__{timestamp}.{ext}
+ * &lt;p&gt;
+ * Artifacts are append-only (never overwritten) and are added to the Story aggregate.
+ *
+ * @see ArtifactOutputService
+ */
+@Service
+public class ArtifactOutputServiceImpl implements ArtifactOutputService {
+
+<span class="fc" id="L40">    private static final Logger logger = LoggerFactory.getLogger(ArtifactOutputServiceImpl.class);</span>
+
+    private static final String PROJECT_PLANNING_ID = &quot;PROJECT-PLANNING&quot;;
+<span class="fc" id="L43">    private static final DateTimeFormatter TIMESTAMP_FORMATTER =</span>
+<span class="fc" id="L44">        DateTimeFormatter.ofPattern(&quot;yyyy-MM-dd'T'HHmmss'Z'&quot;).withZone(ZoneOffset.UTC);</span>
+
+    private final StoryRepository storyRepository;
+    private final WorkspaceConfig workspaceConfig;
+    private final ActivityLogger activityLogger;
+
+    public ArtifactOutputServiceImpl(
+        StoryRepository storyRepository,
+        WorkspaceConfig workspaceConfig,
+        ActivityLogger activityLogger
+<span class="fc" id="L54">    ) {</span>
+<span class="fc" id="L55">        this.storyRepository = storyRepository;</span>
+<span class="fc" id="L56">        this.workspaceConfig = workspaceConfig;</span>
+<span class="fc" id="L57">        this.activityLogger = activityLogger;</span>
+<span class="fc" id="L58">    }</span>
+
+    @Override
+    public void writeArtifacts(OrchestrationRequest request, OrchestrationResult result) {
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (request == null) {</span>
+<span class="fc" id="L63">            throw new IllegalArgumentException(&quot;Orchestration request cannot be null&quot;);</span>
+        }
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        if (result == null) {</span>
+<span class="fc" id="L66">            throw new IllegalArgumentException(&quot;Orchestration result cannot be null&quot;);</span>
+        }
+
+<span class="fc" id="L69">        logger.info(&quot;Writing {} artifacts for orchestration execution {}&quot;,</span>
+<span class="fc" id="L70">            result.getArtifacts().size(),</span>
+<span class="fc" id="L71">            result.getExecutionId());</span>
+
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        StoryId storyId = request.getStoryId() != null</span>
+<span class="fc" id="L74">            ? request.getStoryId()</span>
+<span class="fc" id="L75">            : new StoryId(PROJECT_PLANNING_ID);</span>
+
+        // Load story
+<span class="fc" id="L78">        Story story = storyRepository.findById(storyId)</span>
+<span class="fc" id="L79">            .orElseThrow(() -&gt; new ArtifactWriteException(</span>
+<span class="fc" id="L80">                &quot;Story not found: &quot; + storyId.getValue()</span>
+            ));
+
+<span class="fc" id="L83">        Path artifactsDir = getArtifactsDirectory(story);</span>
+
+        // Ensure directory exists
+        try {
+<span class="fc" id="L87">            Files.createDirectories(artifactsDir);</span>
+<span class="nc" id="L88">        } catch (IOException e) {</span>
+<span class="nc" id="L89">            throw new ArtifactWriteException(</span>
+                &quot;Failed to create artifacts directory: &quot; + artifactsDir, e
+            );
+<span class="fc" id="L92">        }</span>
+
+        // Write each artifact
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        for (ArtifactReference artifactRef : result.getArtifacts()) {</span>
+<span class="fc" id="L96">            writeArtifact(story, artifactsDir, artifactRef);</span>
+<span class="fc" id="L97">        }</span>
+
+        // Save updated story
+<span class="fc" id="L100">        storyRepository.save(story);</span>
+
+<span class="fc" id="L102">        logger.info(&quot;Successfully wrote {} artifacts to {}&quot;, result.getArtifacts().size(), artifactsDir);</span>
+<span class="fc" id="L103">    }</span>
+
+    /**
+     * Writes a single artifact to the filesystem and adds it to the story.
+     */
+    private void writeArtifact(Story story, Path artifactsDir, ArtifactReference artifactRef) {
+        // Generate filename following convention: {name}__{role}__{timestamp}.md
+<span class="fc" id="L110">        String filename = buildArtifactFilename(</span>
+<span class="fc" id="L111">            artifactRef.getName(),</span>
+<span class="fc" id="L112">            artifactRef.getCreatedBy(),</span>
+<span class="fc" id="L113">            artifactRef.getCreatedAt()</span>
+        );
+
+<span class="fc" id="L116">        Path artifactPath = artifactsDir.resolve(filename);</span>
+
+        // Write to filesystem (append-only)
+        try {
+<span class="fc" id="L120">            Files.writeString(artifactPath, artifactRef.getContent());</span>
+<span class="fc" id="L121">            logger.debug(&quot;Wrote artifact to: {}&quot;, artifactPath);</span>
+<span class="nc" id="L122">        } catch (IOException e) {</span>
+<span class="nc" id="L123">            throw new ArtifactWriteException(</span>
+                &quot;Failed to write artifact: &quot; + filename, e
+            );
+<span class="fc" id="L126">        }</span>
+
+        // Create Artifact entity (use full filename that follows pattern)
+<span class="fc" id="L129">        Artifact artifact = new Artifact(</span>
+            new ArtifactName(filename),
+<span class="fc" id="L131">            story.getId(),</span>
+            artifactPath,
+<span class="fc" id="L133">            artifactRef.getCreatedBy()</span>
+        );
+
+        // Add to story aggregate
+<span class="fc" id="L137">        story.addArtifact(artifact);</span>
+
+        // Log activity
+<span class="fc" id="L140">        activityLogger.logSuccess(</span>
+            &quot;system&quot;,
+            &quot;orchestration_artifact_created&quot;,
+<span class="fc" id="L143">            story.getId().getValue(),</span>
+<span class="fc" id="L144">            Map.of(</span>
+<span class="fc" id="L145">                &quot;artifact&quot;, artifactRef.getName(),</span>
+<span class="fc" id="L146">                &quot;role&quot;, artifactRef.getCreatedBy(),</span>
+                &quot;filename&quot;, filename
+            )
+        );
+
+<span class="fc" id="L151">        logger.info(&quot;Created artifact: {} for story {}&quot;, filename, story.getId().getValue());</span>
+<span class="fc" id="L152">    }</span>
+
+    /**
+     * Builds artifact filename following naming convention.
+     * &lt;p&gt;
+     * Format: {name}__{role}__{timestamp}.md
+     * &lt;p&gt;
+     * Example: research-findings__researcher__2026-03-31T100000Z.md
+     */
+    private String buildArtifactFilename(String name, String role, Instant createdAt) {
+<span class="fc" id="L162">        String timestamp = TIMESTAMP_FORMATTER.format(createdAt);</span>
+
+        // Normalize name and role (lowercase, hyphens for spaces)
+<span class="fc" id="L165">        String normalizedName = normalizePart(name);</span>
+<span class="fc" id="L166">        String normalizedRole = normalizePart(role);</span>
+
+<span class="fc" id="L168">        return String.format(&quot;%s__%s__%s.md&quot;, normalizedName, normalizedRole, timestamp);</span>
+    }
+
+    /**
+     * Normalizes a filename part (lowercase, hyphens for spaces).
+     */
+    private String normalizePart(String part) {
+<span class="fc" id="L175">        return part.toLowerCase()</span>
+<span class="fc" id="L176">            .replaceAll(&quot;\\s+&quot;, &quot;-&quot;)</span>
+<span class="fc" id="L177">            .replaceAll(&quot;[^a-z0-9-]&quot;, &quot;&quot;);</span>
+    }
+
+    /**
+     * Gets the artifacts directory for a story.
+     * &lt;p&gt;
+     * For PROJECT-PLANNING: workspace/stories/PROJECT-PLANNING/artifacts/
+     * For regular stories: workspace/stories/{story-id}/artifacts/
+     */
+    private Path getArtifactsDirectory(Story story) {
+<span class="fc" id="L187">        Path storyDir = workspaceConfig.getWorkspaceRoot()</span>
+<span class="fc" id="L188">            .resolve(story.getPrioritizationState().getDirectoryName())</span>
+<span class="fc" id="L189">            .resolve(story.getId().getValue());</span>
+<span class="fc" id="L190">        return storyDir.resolve(&quot;artifacts&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

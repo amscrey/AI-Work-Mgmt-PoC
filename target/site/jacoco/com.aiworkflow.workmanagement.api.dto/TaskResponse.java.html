@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TaskResponse.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.api.dto</a> &gt; <span class="el_source">TaskResponse.java</span></div><h1>TaskResponse.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.api.dto;
+
+import com.aiworkflow.workmanagement.domain.model.Task;
+import com.aiworkflow.workmanagement.domain.model.TaskState;
+
+import java.time.Instant;
+
+public class TaskResponse {
+    private final String taskId;
+    private final String storyId;
+    private final String title;
+    private final String description;
+    private final TaskState state;
+    private final String assignedTo;
+    private final Integer estimatedHours;
+    private final Instant createdAt;
+    private final Instant updatedAt;
+    private final Instant completedAt;
+    private final String blockingReason;
+
+    public TaskResponse(
+        String taskId,
+        String storyId,
+        String title,
+        String description,
+        TaskState state,
+        String assignedTo,
+        Integer estimatedHours,
+        Instant createdAt,
+        Instant updatedAt,
+        Instant completedAt,
+        String blockingReason
+<span class="fc" id="L33">    ) {</span>
+<span class="fc" id="L34">        this.taskId = taskId;</span>
+<span class="fc" id="L35">        this.storyId = storyId;</span>
+<span class="fc" id="L36">        this.title = title;</span>
+<span class="fc" id="L37">        this.description = description;</span>
+<span class="fc" id="L38">        this.state = state;</span>
+<span class="fc" id="L39">        this.assignedTo = assignedTo;</span>
+<span class="fc" id="L40">        this.estimatedHours = estimatedHours;</span>
+<span class="fc" id="L41">        this.createdAt = createdAt;</span>
+<span class="fc" id="L42">        this.updatedAt = updatedAt;</span>
+<span class="fc" id="L43">        this.completedAt = completedAt;</span>
+<span class="fc" id="L44">        this.blockingReason = blockingReason;</span>
+<span class="fc" id="L45">    }</span>
+
+    public static TaskResponse from(Task task) {
+<span class="fc" id="L48">        return new TaskResponse(</span>
+<span class="fc" id="L49">            task.getId().getValue(),</span>
+<span class="fc" id="L50">            task.getStoryId().getValue(),</span>
+<span class="fc" id="L51">            task.getTitle(),</span>
+<span class="fc" id="L52">            task.getDescription(),</span>
+<span class="fc" id="L53">            task.getState(),</span>
+<span class="fc" id="L54">            task.getAssignedTo(),</span>
+<span class="fc" id="L55">            task.getEstimatedHours(),</span>
+<span class="fc" id="L56">            task.getCreatedAt(),</span>
+<span class="fc" id="L57">            task.getUpdatedAt(),</span>
+<span class="fc" id="L58">            task.getCompletedAt(),</span>
+<span class="fc" id="L59">            task.getBlockingReason()</span>
+        );
+    }
+
+    public String getTaskId() {
+<span class="fc" id="L64">        return taskId;</span>
+    }
+
+    public String getStoryId() {
+<span class="fc" id="L68">        return storyId;</span>
+    }
+
+    public String getTitle() {
+<span class="fc" id="L72">        return title;</span>
+    }
+
+    public String getDescription() {
+<span class="fc" id="L76">        return description;</span>
+    }
+
+    public TaskState getState() {
+<span class="fc" id="L80">        return state;</span>
+    }
+
+    public String getAssignedTo() {
+<span class="fc" id="L84">        return assignedTo;</span>
+    }
+
+    public Integer getEstimatedHours() {
+<span class="fc" id="L88">        return estimatedHours;</span>
+    }
+
+    public Instant getCreatedAt() {
+<span class="fc" id="L92">        return createdAt;</span>
+    }
+
+    public Instant getUpdatedAt() {
+<span class="fc" id="L96">        return updatedAt;</span>
+    }
+
+    public Instant getCompletedAt() {
+<span class="fc" id="L100">        return completedAt;</span>
+    }
+
+    public String getBlockingReason() {
+<span class="fc" id="L104">        return blockingReason;</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

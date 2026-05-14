@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RoleFileParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.orchestration.service.impl</a> &gt; <span class="el_source">RoleFileParser.java</span></div><h1>RoleFileParser.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.orchestration.service.impl;
+
+import com.aiworkflow.workmanagement.orchestration.domain.AgentRole;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * Parses ROLE.md files to extract keywords from Responsibilities and Skills sections.
+ */
+<span class="fc" id="L19">public class RoleFileParser {</span>
+
+<span class="fc" id="L21">    private static final Pattern SECTION_PATTERN = Pattern.compile(&quot;^##\\s+(Responsibilities|Skills Used)\\s*$&quot;, Pattern.MULTILINE);</span>
+<span class="fc" id="L22">    private static final Pattern BULLET_PATTERN = Pattern.compile(&quot;^[-*]\\s+(.+)$&quot;, Pattern.MULTILINE);</span>
+<span class="fc" id="L23">    private static final Set&lt;String&gt; STOP_WORDS = Set.of(</span>
+        &quot;the&quot;, &quot;and&quot;, &quot;or&quot;, &quot;to&quot;, &quot;a&quot;, &quot;an&quot;, &quot;of&quot;, &quot;for&quot;, &quot;with&quot;, &quot;in&quot;, &quot;on&quot;, &quot;by&quot;, &quot;be&quot;, &quot;is&quot;, &quot;are&quot;,
+        &quot;that&quot;, &quot;this&quot;, &quot;as&quot;, &quot;from&quot;, &quot;at&quot;, &quot;it&quot;, &quot;into&quot;, &quot;when&quot;, &quot;use&quot;, &quot;using&quot;, &quot;used&quot;
+    );
+
+    public RoleKeywords parse(Path roleFilePath) throws IOException {
+<span class="fc" id="L29">        AgentRole role = AgentRole.fromFile(roleFilePath);</span>
+<span class="fc" id="L30">        String content = role.getFullContent();</span>
+<span class="fc" id="L31">        List&lt;String&gt; keywords = extractKeywords(content);</span>
+<span class="fc" id="L32">        return new RoleKeywords(role, keywords);</span>
+    }
+
+    private List&lt;String&gt; extractKeywords(String content) {
+<span class="fc" id="L36">        Set&lt;String&gt; keywords = new LinkedHashSet&lt;&gt;();</span>
+<span class="fc" id="L37">        Matcher sectionMatcher = SECTION_PATTERN.matcher(content);</span>
+
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        while (sectionMatcher.find()) {</span>
+<span class="fc" id="L40">            int sectionStart = sectionMatcher.end();</span>
+<span class="fc" id="L41">            int nextSection = findNextSectionStart(content, sectionStart);</span>
+<span class="fc" id="L42">            String sectionBody = content.substring(sectionStart, nextSection);</span>
+<span class="fc" id="L43">            Matcher bulletMatcher = BULLET_PATTERN.matcher(sectionBody);</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">            while (bulletMatcher.find()) {</span>
+<span class="fc" id="L45">                String line = bulletMatcher.group(1);</span>
+<span class="fc" id="L46">                keywords.addAll(splitKeywords(line));</span>
+<span class="fc" id="L47">            }</span>
+<span class="fc" id="L48">        }</span>
+
+<span class="fc" id="L50">        return new ArrayList&lt;&gt;(new TreeSet&lt;&gt;(keywords));</span>
+    }
+
+    private int findNextSectionStart(String content, int fromIndex) {
+<span class="fc" id="L54">        Matcher matcher = SECTION_PATTERN.matcher(content);</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (matcher.find(fromIndex)) {</span>
+<span class="fc" id="L56">            return matcher.start();</span>
+        }
+<span class="fc" id="L58">        return content.length();</span>
+    }
+
+    private List&lt;String&gt; splitKeywords(String line) {
+<span class="fc" id="L62">        String[] tokens = line.toLowerCase(Locale.ROOT)</span>
+<span class="fc" id="L63">            .replaceAll(&quot;[^a-z0-9\\s-]&quot;, &quot; &quot;)</span>
+<span class="fc" id="L64">            .split(&quot;\\s+&quot;);</span>
+<span class="fc" id="L65">        List&lt;String&gt; results = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        for (String token : tokens) {</span>
+<span class="fc bfc" id="L67" title="All 6 branches covered.">            if (token.isBlank() || token.length() &lt; 3 || STOP_WORDS.contains(token)) {</span>
+<span class="fc" id="L68">                continue;</span>
+            }
+<span class="fc" id="L70">            results.add(token);</span>
+        }
+<span class="fc" id="L72">        return results;</span>
+    }
+
+<span class="fc" id="L75">    public record RoleKeywords(AgentRole role, List&lt;String&gt; keywords) {}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

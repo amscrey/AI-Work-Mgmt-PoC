@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StoryId.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.domain.valueobject</a> &gt; <span class="el_source">StoryId.java</span></div><h1>StoryId.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.domain.valueobject;
+
+import java.io.Serializable;
+import java.util.Objects;
+import java.util.regex.Pattern;
+
+/**
+ * Value object representing a Story identifier.
+ * Format: STORY-{number}
+ * Example: STORY-123
+ */
+public final class StoryId implements Serializable {
+    private static final long serialVersionUID = 1L;
+<span class="fc" id="L14">    private static final Pattern PATTERN = Pattern.compile(&quot;^STORY-\\d{1,}$&quot;);</span>
+    private static final String PROJECT_PLANNING = &quot;PROJECT-PLANNING&quot;;  // Special reserved ID
+
+    private final String value;
+
+<span class="fc" id="L19">    public StoryId(String value) {</span>
+<span class="fc bfc" id="L20" title="All 4 branches covered.">        if (value == null || value.isBlank()) {</span>
+<span class="fc" id="L21">            throw new IllegalArgumentException(&quot;StoryId cannot be null or blank&quot;);</span>
+        }
+        // Allow PROJECT-PLANNING as a special case
+<span class="fc bfc" id="L24" title="All 4 branches covered.">        if (!PROJECT_PLANNING.equals(value) &amp;&amp; !PATTERN.matcher(value).matches()) {</span>
+<span class="fc" id="L25">            throw new IllegalArgumentException(</span>
+                &quot;StoryId must match pattern STORY-{number} or be PROJECT-PLANNING, got: &quot; + value
+            );
+        }
+<span class="fc" id="L29">        this.value = value;</span>
+<span class="fc" id="L30">    }</span>
+
+    public String getValue() {
+<span class="fc" id="L33">        return value;</span>
+    }
+
+    /**
+     * Extracts the numeric part from the story ID.
+     * Example: STORY-123 returns 123
+     * @return the numeric part, or 0 for PROJECT-PLANNING
+     */
+    public int getNumber() {
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">        if (PROJECT_PLANNING.equals(value)) {</span>
+<span class="nc" id="L43">            return 0;  // PROJECT-PLANNING has no number</span>
+        }
+<span class="fc" id="L45">        return Integer.parseInt(value.substring(6)); // Skip &quot;STORY-&quot;</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (this == o) return true;</span>
+<span class="fc bfc" id="L51" title="All 4 branches covered.">        if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="fc" id="L52">        StoryId storyId = (StoryId) o;</span>
+<span class="fc" id="L53">        return Objects.equals(value, storyId.value);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L58">        return Objects.hash(value);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L63">        return value;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LangChain4jConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.orchestration.config</a> &gt; <span class="el_source">LangChain4jConfig.java</span></div><h1>LangChain4jConfig.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.orchestration.config;
+
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * LangChain4j Spring configuration skeleton used by STORY-009.
+ * This provides a placeholder bean for ChatLanguageModel while keeping the build independent
+ * of LangChain4j provider libraries. During real implementation replace Object with the
+ * actual ChatLanguageModel type from LangChain4j and wire provider clients.
+ */
+@Configuration
+@ConditionalOnProperty(prefix = &quot;orchestration&quot;, name = &quot;execution-mode&quot;, havingValue = &quot;llm&quot;)
+<span class="fc" id="L15">public class LangChain4jConfig {</span>
+
+    @Bean
+    public Object chatLanguageModel() {
+        // Placeholder bean - replace with real ChatLanguageModel implementation
+<span class="fc" id="L20">        return new Object();</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

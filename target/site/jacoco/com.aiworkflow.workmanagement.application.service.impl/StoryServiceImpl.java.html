@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StoryServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.application.service.impl</a> &gt; <span class="el_source">StoryServiceImpl.java</span></div><h1>StoryServiceImpl.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.application.service.impl;
+
+import com.aiworkflow.workmanagement.application.command.CreateStoryCommand;
+import com.aiworkflow.workmanagement.application.command.TransitionStoryCommand;
+import com.aiworkflow.workmanagement.application.command.UpdateStoryCommand;
+import com.aiworkflow.workmanagement.application.service.ActivityLogger;
+import com.aiworkflow.workmanagement.application.service.StoryService;
+import com.aiworkflow.workmanagement.domain.model.PrioritizationState;
+import com.aiworkflow.workmanagement.domain.model.Story;
+import com.aiworkflow.workmanagement.domain.model.WorkflowState;
+import com.aiworkflow.workmanagement.domain.repository.StoryRepository;
+import com.aiworkflow.workmanagement.domain.service.StateTransitionValidator;
+import com.aiworkflow.workmanagement.domain.valueobject.RoleName;
+import com.aiworkflow.workmanagement.domain.valueobject.StoryId;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+/**
+ * Implementation of StoryService.
+ * Note: Spring annotations (@Service, @Transactional) will be added when Spring Boot is configured.
+ */
+public class StoryServiceImpl implements StoryService {
+
+    private final StoryRepository storyRepository;
+    private final StateTransitionValidator stateTransitionValidator;
+    private final ActivityLogger activityLogger;
+
+    public StoryServiceImpl(StoryRepository storyRepository,
+                           StateTransitionValidator stateTransitionValidator,
+<span class="fc" id="L33">                           ActivityLogger activityLogger) {</span>
+<span class="fc" id="L34">        this.storyRepository = storyRepository;</span>
+<span class="fc" id="L35">        this.stateTransitionValidator = stateTransitionValidator;</span>
+<span class="fc" id="L36">        this.activityLogger = activityLogger;</span>
+<span class="fc" id="L37">    }</span>
+
+    @Override
+    public Story createStory(CreateStoryCommand command) {
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        String role = command.getAuthor() != null ? command.getAuthor() : &quot;system&quot;;</span>
+        try {
+            // Create the story entity
+<span class="fc" id="L44">            StoryId storyId = new StoryId(command.getStoryId());</span>
+<span class="fc" id="L45">            Story story = new Story(</span>
+                storyId,
+<span class="fc" id="L47">                command.getTitle(),</span>
+<span class="fc" id="L48">                command.getSummary(),</span>
+<span class="fc" id="L49">                command.getInitialState(),</span>
+<span class="fc" id="L50">                command.getPrioritization()</span>
+            );
+
+            // Set optional fields
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">            if (command.getDescription() != null) {</span>
+<span class="nc" id="L55">                story.setDescription(command.getDescription());</span>
+            }
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">            if (command.getAuthor() != null) {</span>
+<span class="fc" id="L58">                story.setAuthor(new RoleName(command.getAuthor()));</span>
+            }
+<span class="fc bfc" id="L60" title="All 2 branches covered.">            if (command.getEstimatedEffort() != null) {</span>
+<span class="fc" id="L61">                story.setEstimatedEffort(command.getEstimatedEffort());</span>
+            }
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">            if (command.getAcceptanceCriteria() != null) {</span>
+<span class="nc" id="L64">                command.getAcceptanceCriteria().forEach(story::addAcceptanceCriterion);</span>
+            }
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">            if (command.getTags() != null) {</span>
+<span class="nc" id="L67">                command.getTags().forEach(story::addTag);</span>
+            }
+
+            // Save the story
+<span class="fc" id="L71">            Story savedStory = storyRepository.save(story);</span>
+
+            // Log the activity with enriched details
+<span class="fc" id="L74">            Map&lt;String, Object&gt; details = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L75">            details.put(&quot;title&quot;, command.getTitle());</span>
+<span class="fc" id="L76">            details.put(&quot;summary&quot;, command.getSummary());</span>
+<span class="fc" id="L77">            details.put(&quot;workflow_state&quot;, command.getInitialState().toString());</span>
+<span class="fc" id="L78">            details.put(&quot;prioritization&quot;, command.getPrioritization().toString());</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">            if (command.getEstimatedEffort() != null) {</span>
+<span class="fc" id="L80">                details.put(&quot;estimated_effort&quot;, command.getEstimatedEffort());</span>
+            }
+<span class="pc bpc" id="L82" title="3 of 4 branches missed.">            if (command.getTags() != null &amp;&amp; !command.getTags().isEmpty()) {</span>
+<span class="nc" id="L83">                details.put(&quot;tags&quot;, command.getTags());</span>
+            }
+<span class="fc" id="L85">            activityLogger.logSuccess(role, &quot;create_story&quot;, command.getStoryId(), details);</span>
+
+<span class="fc" id="L87">            return savedStory;</span>
+<span class="fc" id="L88">        } catch (Exception e) {</span>
+<span class="fc" id="L89">            Map&lt;String, Object&gt; failureDetails = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L90">            failureDetails.put(&quot;attempted_title&quot;, command.getTitle());</span>
+<span class="fc" id="L91">            activityLogger.logFailure(role, &quot;create_story&quot;, command.getStoryId(), e.getMessage(), failureDetails);</span>
+<span class="fc" id="L92">            throw e;</span>
+        }
+    }
+
+    @Override
+    public Story updateStory(UpdateStoryCommand command) {
+        try {
+<span class="fc" id="L99">            StoryId storyId = new StoryId(command.getStoryId());</span>
+<span class="fc" id="L100">            Story story = storyRepository.findById(storyId)</span>
+<span class="fc" id="L101">                .orElseThrow(() -&gt; new StoryNotFoundException(&quot;Story not found: &quot; + command.getStoryId()));</span>
+
+            // Track what's being updated
+<span class="fc" id="L104">            Map&lt;String, Object&gt; details = new HashMap&lt;&gt;();</span>
+
+            // Update fields if provided
+<span class="fc bfc" id="L107" title="All 2 branches covered.">            if (command.getTitle() != null) {</span>
+<span class="fc" id="L108">                details.put(&quot;updated_title&quot;, command.getTitle());</span>
+<span class="fc" id="L109">                story.setTitle(command.getTitle());</span>
+            }
+<span class="fc bfc" id="L111" title="All 2 branches covered.">            if (command.getSummary() != null) {</span>
+<span class="fc" id="L112">                details.put(&quot;updated_summary&quot;, command.getSummary());</span>
+<span class="fc" id="L113">                story.setSummary(command.getSummary());</span>
+            }
+<span class="fc bfc" id="L115" title="All 2 branches covered.">            if (command.getDescription() != null) {</span>
+<span class="fc" id="L116">                details.put(&quot;updated_description&quot;, true);</span>
+<span class="fc" id="L117">                story.setDescription(command.getDescription());</span>
+            }
+<span class="fc bfc" id="L119" title="All 2 branches covered.">            if (command.getEstimatedEffort() != null) {</span>
+<span class="fc" id="L120">                details.put(&quot;updated_estimated_effort&quot;, command.getEstimatedEffort());</span>
+<span class="fc" id="L121">                story.setEstimatedEffort(command.getEstimatedEffort());</span>
+            }
+
+            // Save the updated story
+<span class="fc" id="L125">            Story updatedStory = storyRepository.save(story);</span>
+
+            // Log the activity with details of what changed
+<span class="fc" id="L128">            activityLogger.logSuccess(&quot;system&quot;, &quot;update_story&quot;, command.getStoryId(), details);</span>
+
+<span class="fc" id="L130">            return updatedStory;</span>
+<span class="fc" id="L131">        } catch (Exception e) {</span>
+<span class="fc" id="L132">            activityLogger.logFailure(&quot;system&quot;, &quot;update_story&quot;, command.getStoryId(), e.getMessage(), null);</span>
+<span class="fc" id="L133">            throw e;</span>
+        }
+    }
+
+    @Override
+    public Story transitionStory(TransitionStoryCommand command) {
+        try {
+<span class="fc" id="L140">            StoryId storyId = new StoryId(command.getStoryId());</span>
+<span class="fc" id="L141">            Story story = storyRepository.findById(storyId)</span>
+<span class="pc" id="L142">                .orElseThrow(() -&gt; new StoryNotFoundException(&quot;Story not found: &quot; + command.getStoryId()));</span>
+
+            // Validate the transition
+<span class="fc" id="L145">            stateTransitionValidator.validateWorkflowTransition(story, command.getTargetState(), command.getInitiator());</span>
+
+            // Perform the transition
+<span class="fc" id="L148">            story.transitionWorkflowState(command.getTargetState(), command.getInitiator());</span>
+
+            // Save the updated story
+<span class="fc" id="L151">            Story updatedStory = storyRepository.save(story);</span>
+
+            // Log the activity
+<span class="fc" id="L154">            Map&lt;String, Object&gt; details = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L155">            details.put(&quot;from&quot;, story.getWorkflowState());</span>
+<span class="fc" id="L156">            details.put(&quot;to&quot;, command.getTargetState());</span>
+<span class="fc" id="L157">            details.put(&quot;initiator&quot;, command.getInitiator());</span>
+<span class="fc bfc" id="L158" title="All 2 branches covered.">            if (command.getReason() != null) {</span>
+<span class="fc" id="L159">                details.put(&quot;reason&quot;, command.getReason());</span>
+            }
+<span class="fc" id="L161">            activityLogger.logSuccess(command.getInitiator().name().toLowerCase(), &quot;transition_story&quot;, command.getStoryId(), details);</span>
+
+<span class="fc" id="L163">            return updatedStory;</span>
+<span class="fc" id="L164">        } catch (Exception e) {</span>
+<span class="fc" id="L165">            activityLogger.logFailure(&quot;system&quot;, &quot;transition_story&quot;, command.getStoryId(), e.getMessage(), null);</span>
+<span class="fc" id="L166">            throw e;</span>
+        }
+    }
+
+    @Override
+    public Story changePrioritization(StoryId storyId, PrioritizationState newPrioritization) {
+        try {
+<span class="nc" id="L173">            Story story = storyRepository.findById(storyId)</span>
+<span class="nc" id="L174">                .orElseThrow(() -&gt; new StoryNotFoundException(&quot;Story not found: &quot; + storyId));</span>
+
+            // Note: The Story entity doesn't have changePrioritization method in current implementation
+            // This would require re-saving the story with new prioritization
+            // For now, log that this is not yet implemented
+<span class="nc" id="L179">            throw new UnsupportedOperationException(&quot;changePrioritization not yet implemented in Story entity&quot;);</span>
+<span class="nc" id="L180">        } catch (Exception e) {</span>
+<span class="nc" id="L181">            activityLogger.logFailure(&quot;system&quot;, &quot;change_prioritization&quot;, storyId.getValue(), e.getMessage(), null);</span>
+<span class="nc" id="L182">            throw e;</span>
+        }
+    }
+
+    @Override
+    public Optional&lt;Story&gt; findById(StoryId storyId) {
+<span class="fc" id="L188">        return storyRepository.findById(storyId);</span>
+    }
+
+    @Override
+    public List&lt;Story&gt; findByState(WorkflowState state) {
+<span class="fc" id="L193">        return storyRepository.findByState(state);</span>
+    }
+
+    @Override
+    public List&lt;Story&gt; findByPrioritization(PrioritizationState prioritization) {
+<span class="fc" id="L198">        return storyRepository.findByPrioritization(prioritization);</span>
+    }
+
+    @Override
+    public List&lt;Story&gt; findAll() {
+<span class="fc" id="L203">        return storyRepository.findAll();</span>
+    }
+
+    @Override
+    public void deleteStory(StoryId storyId) {
+        try {
+<span class="fc" id="L209">            storyRepository.delete(storyId);</span>
+<span class="fc" id="L210">            activityLogger.logSuccess(&quot;system&quot;, &quot;delete_story&quot;, storyId.getValue(), null);</span>
+<span class="fc" id="L211">        } catch (Exception e) {</span>
+<span class="fc" id="L212">            activityLogger.logFailure(&quot;system&quot;, &quot;delete_story&quot;, storyId.getValue(), e.getMessage(), null);</span>
+<span class="fc" id="L213">            throw e;</span>
+<span class="fc" id="L214">        }</span>
+<span class="fc" id="L215">    }</span>
+
+    /**
+     * Exception thrown when a story is not found.
+     */
+    public static class StoryNotFoundException extends RuntimeException {
+        public StoryNotFoundException(String message) {
+<span class="fc" id="L222">            super(message);</span>
+<span class="fc" id="L223">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

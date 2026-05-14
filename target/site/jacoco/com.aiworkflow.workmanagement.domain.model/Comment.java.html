@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Comment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.domain.model</a> &gt; <span class="el_source">Comment.java</span></div><h1>Comment.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.domain.model;
+
+import com.aiworkflow.workmanagement.domain.valueobject.CommentId;
+import com.aiworkflow.workmanagement.domain.valueobject.StoryId;
+import java.io.Serializable;
+import java.time.Instant;
+import java.util.Objects;
+
+/**
+ * Entity representing a Comment in the workflow system.
+ * Comments provide communication and feedback on Stories and Tasks.
+ */
+public class Comment implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    private final CommentId id;
+    private final StoryId storyId;
+    private final String author;
+    private String content;
+    private CommentType type;
+    private final Instant createdAt;
+    private Instant updatedAt;
+    private boolean resolved;
+    private String resolvedBy;
+    private Instant resolvedAt;
+
+<span class="fc" id="L27">    public Comment(CommentId id, StoryId storyId, String author, String content, CommentType type) {</span>
+<span class="pc bpc" id="L28" title="1 of 2 branches missed.">        if (id == null) {</span>
+<span class="nc" id="L29">            throw new IllegalArgumentException(&quot;CommentId cannot be null&quot;);</span>
+        }
+<span class="pc bpc" id="L31" title="1 of 2 branches missed.">        if (storyId == null) {</span>
+<span class="nc" id="L32">            throw new IllegalArgumentException(&quot;StoryId cannot be null&quot;);</span>
+        }
+<span class="pc bpc" id="L34" title="2 of 4 branches missed.">        if (author == null || author.isBlank()) {</span>
+<span class="nc" id="L35">            throw new IllegalArgumentException(&quot;Author cannot be null or blank&quot;);</span>
+        }
+<span class="pc bpc" id="L37" title="2 of 4 branches missed.">        if (content == null || content.isBlank()) {</span>
+<span class="nc" id="L38">            throw new IllegalArgumentException(&quot;Content cannot be null or blank&quot;);</span>
+        }
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        if (type == null) {</span>
+<span class="nc" id="L41">            throw new IllegalArgumentException(&quot;CommentType cannot be null&quot;);</span>
+        }
+
+<span class="fc" id="L44">        this.id = id;</span>
+<span class="fc" id="L45">        this.storyId = storyId;</span>
+<span class="fc" id="L46">        this.author = author;</span>
+<span class="fc" id="L47">        this.content = content;</span>
+<span class="fc" id="L48">        this.type = type;</span>
+<span class="fc" id="L49">        this.createdAt = Instant.now();</span>
+<span class="fc" id="L50">        this.updatedAt = Instant.now();</span>
+<span class="fc" id="L51">        this.resolved = false;</span>
+<span class="fc" id="L52">    }</span>
+
+    // Getters
+    public CommentId getId() {
+<span class="fc" id="L56">        return id;</span>
+    }
+
+    public StoryId getStoryId() {
+<span class="fc" id="L60">        return storyId;</span>
+    }
+
+    public String getAuthor() {
+<span class="fc" id="L64">        return author;</span>
+    }
+
+    public String getContent() {
+<span class="fc" id="L68">        return content;</span>
+    }
+
+    public CommentType getType() {
+<span class="fc" id="L72">        return type;</span>
+    }
+
+    public Instant getCreatedAt() {
+<span class="fc" id="L76">        return createdAt;</span>
+    }
+
+    public Instant getUpdatedAt() {
+<span class="fc" id="L80">        return updatedAt;</span>
+    }
+
+    public boolean isResolved() {
+<span class="fc" id="L84">        return resolved;</span>
+    }
+
+    public String getResolvedBy() {
+<span class="fc" id="L88">        return resolvedBy;</span>
+    }
+
+    public Instant getResolvedAt() {
+<span class="fc" id="L92">        return resolvedAt;</span>
+    }
+
+    // Business methods
+    public void updateContent(String content) {
+<span class="pc bpc" id="L97" title="2 of 4 branches missed.">        if (content == null || content.isBlank()) {</span>
+<span class="nc" id="L98">            throw new IllegalArgumentException(&quot;Content cannot be null or blank&quot;);</span>
+        }
+<span class="fc" id="L100">        this.content = content;</span>
+<span class="fc" id="L101">        this.updatedAt = Instant.now();</span>
+<span class="fc" id="L102">    }</span>
+
+    public void updateType(CommentType type) {
+<span class="nc bnc" id="L105" title="All 2 branches missed.">        if (type == null) {</span>
+<span class="nc" id="L106">            throw new IllegalArgumentException(&quot;CommentType cannot be null&quot;);</span>
+        }
+<span class="nc" id="L108">        this.type = type;</span>
+<span class="nc" id="L109">        this.updatedAt = Instant.now();</span>
+<span class="nc" id="L110">    }</span>
+
+    public void resolve(String resolvedBy) {
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">        if (resolved) {</span>
+<span class="nc" id="L114">            throw new IllegalStateException(&quot;Comment is already resolved&quot;);</span>
+        }
+<span class="pc bpc" id="L116" title="2 of 4 branches missed.">        if (resolvedBy == null || resolvedBy.isBlank()) {</span>
+<span class="nc" id="L117">            throw new IllegalArgumentException(&quot;ResolvedBy cannot be null or blank&quot;);</span>
+        }
+
+<span class="fc" id="L120">        this.resolved = true;</span>
+<span class="fc" id="L121">        this.resolvedBy = resolvedBy;</span>
+<span class="fc" id="L122">        this.resolvedAt = Instant.now();</span>
+<span class="fc" id="L123">        this.updatedAt = Instant.now();</span>
+<span class="fc" id="L124">    }</span>
+
+    public void unresolve() {
+<span class="nc bnc" id="L127" title="All 2 branches missed.">        if (!resolved) {</span>
+<span class="nc" id="L128">            throw new IllegalStateException(&quot;Comment is not resolved&quot;);</span>
+        }
+
+<span class="nc" id="L131">        this.resolved = false;</span>
+<span class="nc" id="L132">        this.resolvedBy = null;</span>
+<span class="nc" id="L133">        this.resolvedAt = null;</span>
+<span class="nc" id="L134">        this.updatedAt = Instant.now();</span>
+<span class="nc" id="L135">    }</span>
+
+    public boolean requiresResponse() {
+<span class="pc bpc" id="L138" title="1 of 4 branches missed.">        return type.requiresResponse() &amp;&amp; !resolved;</span>
+    }
+
+    public boolean isSystemGenerated() {
+<span class="fc" id="L142">        return type.isSystemGenerated();</span>
+    }
+
+    public boolean isUserGenerated() {
+<span class="fc" id="L146">        return type.isUserGenerated();</span>
+    }
+
+    public String getRoleFromId() {
+<span class="nc" id="L150">        return id.getRole();</span>
+    }
+
+    public String getTimestampFromId() {
+<span class="nc" id="L154">        return id.getTimestamp();</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">        if (this == o) return true;</span>
+<span class="nc bnc" id="L160" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="nc" id="L161">        Comment comment = (Comment) o;</span>
+<span class="nc" id="L162">        return Objects.equals(id, comment.id);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L167">        return Objects.hash(id);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L172">        return &quot;Comment{&quot; +</span>
+            &quot;id=&quot; + id +
+            &quot;, storyId=&quot; + storyId +
+            &quot;, author='&quot; + author + '\'' +
+            &quot;, type=&quot; + type +
+            &quot;, resolved=&quot; + resolved +
+            '}';
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

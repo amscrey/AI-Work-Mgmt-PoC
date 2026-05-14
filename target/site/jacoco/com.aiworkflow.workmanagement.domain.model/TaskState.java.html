@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TaskState.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.domain.model</a> &gt; <span class="el_source">TaskState.java</span></div><h1>TaskState.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.domain.model;
+
+/**
+ * Represents the state of a Task within a Story.
+ * Simpler state model than WorkflowState for granular task tracking.
+ */
+<span class="fc" id="L7">public enum TaskState {</span>
+<span class="fc" id="L8">    PENDING,</span>
+<span class="fc" id="L9">    IN_PROGRESS,</span>
+<span class="fc" id="L10">    COMPLETED,</span>
+<span class="fc" id="L11">    BLOCKED;</span>
+
+    /**
+     * Determines if a transition from this state to the target state is valid.
+     *
+     * @param target The target state
+     * @return true if the transition is valid, false otherwise
+     */
+    public boolean canTransitionTo(TaskState target) {
+<span class="pc bpc" id="L20" title="1 of 2 branches missed.">        if (this == target) {</span>
+<span class="nc" id="L21">            return false; // No transition to same state</span>
+        }
+
+<span class="pc bpc" id="L24" title="2 of 4 branches missed.">        return switch (this) {</span>
+<span class="fc bfc" id="L25" title="All 4 branches covered.">            case PENDING -&gt; target == IN_PROGRESS || target == BLOCKED;</span>
+<span class="pc bpc" id="L26" title="3 of 6 branches missed.">            case IN_PROGRESS -&gt; target == COMPLETED || target == BLOCKED || target == PENDING;</span>
+<span class="nc bnc" id="L27" title="All 4 branches missed.">            case BLOCKED -&gt; target == PENDING || target == IN_PROGRESS;</span>
+<span class="nc bnc" id="L28" title="All 2 branches missed.">            case COMPLETED -&gt; target == PENDING; // Can reopen completed tasks</span>
+        };
+    }
+
+    /**
+     * Returns whether this state represents an active task.
+     */
+    public boolean isActive() {
+<span class="nc bnc" id="L36" title="All 4 branches missed.">        return this == IN_PROGRESS || this == BLOCKED;</span>
+    }
+
+    /**
+     * Returns whether this state represents a terminal state.
+     */
+    public boolean isTerminal() {
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        return this == COMPLETED;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

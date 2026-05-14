@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefaultLlmSummaryService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.orchestration.llm</a> &gt; <span class="el_source">DefaultLlmSummaryService.java</span></div><h1>DefaultLlmSummaryService.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.orchestration.llm;
+
+import com.aiworkflow.workmanagement.orchestration.domain.LlmConfigSnapshot;
+import com.aiworkflow.workmanagement.orchestration.domain.LlmSummary;
+import com.aiworkflow.workmanagement.orchestration.service.LlmConfigLoader;
+import com.aiworkflow.workmanagement.orchestration.service.LlmSummaryService;
+import org.springframework.stereotype.Service;
+
+/**
+ * Default runtime summary service for LLM configuration.
+ */
+@Service
+public class DefaultLlmSummaryService implements LlmSummaryService {
+
+    private final LlmConfigLoader configLoader;
+
+<span class="fc" id="L17">    public DefaultLlmSummaryService(LlmConfigLoader configLoader) {</span>
+<span class="fc" id="L18">        this.configLoader = configLoader;</span>
+<span class="fc" id="L19">    }</span>
+
+    @Override
+    public LlmSummary getSummary() {
+<span class="fc" id="L23">        LlmConfigSnapshot snapshot = configLoader.load();</span>
+<span class="fc" id="L24">        return new LlmSummary(</span>
+<span class="fc" id="L25">            snapshot.getDefaultProvider(),</span>
+<span class="fc" id="L26">            snapshot.getProviders(),</span>
+<span class="fc" id="L27">            snapshot.getRoleMappings(),</span>
+<span class="fc" id="L28">            snapshot.getDiagnostics()</span>
+        );
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

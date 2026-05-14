@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LangChain4jChatClient.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.orchestration.llm</a> &gt; <span class="el_source">LangChain4jChatClient.java</span></div><h1>LangChain4jChatClient.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.orchestration.llm;
+
+import com.aiworkflow.workmanagement.orchestration.domain.LlmChatResponse;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
+
+import java.lang.reflect.Method;
+
+/**
+ * Adapter that invokes a LangChain4j ChatLanguageModel using reflection to avoid
+ * hard coupling to specific API signatures.
+ */
+@Component
+@ConditionalOnProperty(prefix = &quot;orchestration&quot;, name = &quot;execution-mode&quot;, havingValue = &quot;llm&quot;)
+public class LangChain4jChatClient implements LLMChatClient {
+
+    private final Object chatLanguageModel;
+
+<span class="fc" id="L20">    public LangChain4jChatClient(@Qualifier(&quot;chatLanguageModel&quot;) Object chatLanguageModel) {</span>
+<span class="fc" id="L21">        this.chatLanguageModel = chatLanguageModel;</span>
+<span class="fc" id="L22">    }</span>
+
+    @Override
+    public LlmChatResponse generate(String roleName, String prompt) {
+        try {
+<span class="nc" id="L27">            Method generate = chatLanguageModel.getClass().getMethod(&quot;generate&quot;, String.class);</span>
+<span class="nc" id="L28">            Object result = generate.invoke(chatLanguageModel, prompt);</span>
+<span class="nc bnc" id="L29" title="All 2 branches missed.">            if (result instanceof String) {</span>
+<span class="nc" id="L30">                return new LlmChatResponse((String) result, &quot;langchain4j&quot;, null, null);</span>
+            }
+<span class="nc" id="L32">            return new LlmChatResponse(extractText(result), &quot;langchain4j&quot;, null, null);</span>
+<span class="nc" id="L33">        } catch (Exception e) {</span>
+<span class="nc" id="L34">            throw new IllegalStateException(&quot;Failed to invoke ChatLanguageModel.generate&quot;, e);</span>
+        }
+    }
+
+    private String extractText(Object result) throws Exception {
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        if (result == null) {</span>
+<span class="nc" id="L40">            return &quot;&quot;;</span>
+        }
+<span class="nc bnc" id="L42" title="All 2 branches missed.">        for (String methodName : new String[]{&quot;text&quot;, &quot;content&quot;, &quot;getText&quot;, &quot;getContent&quot;}) {</span>
+            try {
+<span class="nc" id="L44">                Method method = result.getClass().getMethod(methodName);</span>
+<span class="nc" id="L45">                Object value = method.invoke(result);</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">                if (value instanceof String) {</span>
+<span class="nc" id="L47">                    return (String) value;</span>
+                }
+<span class="nc" id="L49">            } catch (NoSuchMethodException ignored) {</span>
+                // try next method name
+<span class="nc" id="L51">            }</span>
+        }
+<span class="nc" id="L53">        return result.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

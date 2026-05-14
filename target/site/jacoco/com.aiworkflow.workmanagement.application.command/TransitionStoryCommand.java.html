@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransitionStoryCommand.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.application.command</a> &gt; <span class="el_source">TransitionStoryCommand.java</span></div><h1>TransitionStoryCommand.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.application.command;
+
+import com.aiworkflow.workmanagement.domain.model.Role;
+import com.aiworkflow.workmanagement.domain.model.WorkflowState;
+
+import java.util.Objects;
+
+/**
+ * Command to transition a Story to a new workflow state.
+ */
+public class TransitionStoryCommand {
+    private final String storyId;
+    private final WorkflowState targetState;
+    private final Role initiator;
+    private final String reason;
+
+    public TransitionStoryCommand(String storyId, WorkflowState targetState, Role initiator) {
+<span class="fc" id="L18">        this(storyId, targetState, initiator, null);</span>
+<span class="fc" id="L19">    }</span>
+
+<span class="fc" id="L21">    public TransitionStoryCommand(String storyId, WorkflowState targetState, Role initiator, String reason) {</span>
+<span class="fc" id="L22">        this.storyId = Objects.requireNonNull(storyId, &quot;Story ID cannot be null&quot;);</span>
+<span class="fc" id="L23">        this.targetState = Objects.requireNonNull(targetState, &quot;Target state cannot be null&quot;);</span>
+<span class="fc" id="L24">        this.initiator = Objects.requireNonNull(initiator, &quot;Initiator cannot be null&quot;);</span>
+<span class="fc" id="L25">        this.reason = reason;</span>
+<span class="fc" id="L26">    }</span>
+
+    // Getters
+<span class="fc" id="L29">    public String getStoryId() { return storyId; }</span>
+<span class="fc" id="L30">    public WorkflowState getTargetState() { return targetState; }</span>
+<span class="fc" id="L31">    public Role getInitiator() { return initiator; }</span>
+<span class="fc" id="L32">    public String getReason() { return reason; }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

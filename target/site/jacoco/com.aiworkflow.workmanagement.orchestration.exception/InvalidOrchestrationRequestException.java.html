@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InvalidOrchestrationRequestException.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.orchestration.exception</a> &gt; <span class="el_source">InvalidOrchestrationRequestException.java</span></div><h1>InvalidOrchestrationRequestException.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.orchestration.exception;
+
+/**
+ * Exception thrown when an orchestration request is invalid.
+ * &lt;p&gt;
+ * This exception indicates that the OrchestrationRequest contains invalid parameters,
+ * such as:
+ * - Null or blank work intent
+ * - Invalid story ID
+ * - Missing required fields
+ * - Malformed request data
+ * &lt;p&gt;
+ * This is a validation exception that should be caught and handled by the caller
+ * to provide appropriate feedback to the user.
+ */
+public class InvalidOrchestrationRequestException extends OrchestrationException {
+
+    /**
+     * Constructs a new invalid orchestration request exception with the specified detail message.
+     *
+     * @param message the detail message explaining what is invalid
+     */
+    public InvalidOrchestrationRequestException(String message) {
+<span class="fc" id="L24">        super(message);</span>
+<span class="fc" id="L25">    }</span>
+
+    /**
+     * Constructs a new invalid orchestration request exception with the specified detail message and cause.
+     *
+     * @param message the detail message explaining what is invalid
+     * @param cause the underlying cause of the validation failure
+     */
+    public InvalidOrchestrationRequestException(String message, Throwable cause) {
+<span class="fc" id="L34">        super(message, cause);</span>
+<span class="fc" id="L35">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,15 @@
+{
+  "id" : "STORY-002",
+  "title" : "Test Story 2",
+  "summary" : "Summary 2",
+  "description" : null,
+  "workflowState" : "IN_PROGRESS",
+  "prioritizationState" : "PRIORITIZED",
+  "assignedTo" : null,
+  "author" : null,
+  "estimatedEffort" : null,
+  "acceptanceCriteria" : [ ],
+  "tags" : [ ],
+  "createdAt" : "2026-04-10T19:04:54.931099Z",
+  "updatedAt" : "2026-04-10T19:04:54.931099Z"
+}

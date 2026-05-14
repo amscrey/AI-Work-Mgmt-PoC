@@ -1,0 +1,58 @@
+# AI Work Management Platform Configuration
+
+workmanagement:
+  workspace-root: ${WORKSPACE_ROOT:AI-Work-Mgmt-LLM-Orch-AddOn}
+  workspace-name: ${WORKSPACE_NAME:workspace}
+
+orchestration:
+  # Execution mode: "template" (deterministic, no LLM) or "llm" (real Claude API calls)
+  execution-mode: template
+
+  # Template mode configuration
+  template:
+    # Whether to simulate execution delay (for realistic testing)
+    simulate-delay: true
+    # Simulated delay in milliseconds
+    delay-ms: 1000
+
+  # Context assembly configuration
+  context:
+    # Maximum number of reference files to include in context
+    max-reference-files: 5
+    # Maximum number of artifacts to include in context
+    max-artifacts: 10
+    # Maximum total context size in characters
+    max-context-chars: 50000
+
+  llm:
+    default-provider: anthropic
+    providers:
+      anthropic:
+        api-key: ${ANTHROPIC_API_KEY:}
+        model: claude-3-5-sonnet-20241022
+      gemini:
+        api-key: ${GEMINI_API_KEY:}
+        model: gemini-2.0-flash
+      groq:
+        api-key: ${GROQ_API_KEY:}
+        model: gpt-j
+      dummy:
+        model: file-bridge
+    dummy-providers: [dummy]
+
+# Logging configuration
+logging:
+  level:
+    com.aiworkflow.workmanagement: INFO
+    com.aiworkflow.workmanagement.orchestration: DEBUG
+
+# Spring Boot configuration
+spring:
+  application:
+    name: ai-work-management-platform
+  devtools:
+    restart:
+      enabled: false
+    remote:
+      restart:
+        enabled: false

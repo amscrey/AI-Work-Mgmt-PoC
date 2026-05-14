@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Role.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.domain.model</a> &gt; <span class="el_source">Role.java</span></div><h1>Role.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.domain.model;
+
+/**
+ * Represents the role of an entity in the workflow system.
+ * Used for access control and state transition validation.
+ */
+<span class="fc" id="L7">public enum Role {</span>
+<span class="fc" id="L8">    AGENT,</span>
+<span class="fc" id="L9">    HUMAN_REVIEWER,</span>
+<span class="fc" id="L10">    HUMAN_APPROVER,</span>
+<span class="fc" id="L11">    SYSTEM;</span>
+
+    /**
+     * Determines if this role is an agent.
+     */
+    public boolean isAgent() {
+<span class="fc bfc" id="L17" title="All 2 branches covered.">        return this == AGENT;</span>
+    }
+
+    /**
+     * Determines if this role is a human.
+     */
+    public boolean isHuman() {
+<span class="pc bpc" id="L24" title="1 of 4 branches missed.">        return this == HUMAN_REVIEWER || this == HUMAN_APPROVER;</span>
+    }
+
+    /**
+     * Determines if this role can approve workflow transitions.
+     */
+    public boolean canApprove() {
+<span class="pc bpc" id="L31" title="1 of 2 branches missed.">        return this == HUMAN_APPROVER;</span>
+    }
+
+    /**
+     * Determines if this role can review work.
+     */
+    public boolean canReview() {
+<span class="nc bnc" id="L38" title="All 4 branches missed.">        return this == HUMAN_REVIEWER || this == HUMAN_APPROVER;</span>
+    }
+
+    /**
+     * Determines if this role is a system role.
+     */
+    public boolean isSystem() {
+<span class="nc bnc" id="L45" title="All 2 branches missed.">        return this == SYSTEM;</span>
+    }
+
+    /**
+     * Returns the lowercase hyphenated name for file naming.
+     * Example: HUMAN_REVIEWER returns &quot;human-reviewer&quot;
+     */
+    public String getFileName() {
+<span class="nc" id="L53">        return name().toLowerCase().replace('_', '-');</span>
+    }
+
+    /**
+     * Creates a Role from a file name.
+     * Example: &quot;human-reviewer&quot; returns HUMAN_REVIEWER
+     */
+    public static Role fromFileName(String fileName) {
+<span class="nc" id="L61">        return valueOf(fileName.toUpperCase().replace('-', '_'));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

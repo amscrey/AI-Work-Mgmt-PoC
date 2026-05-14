@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RoutingLlmChatClient.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.orchestration.llm</a> &gt; <span class="el_source">RoutingLlmChatClient.java</span></div><h1>RoutingLlmChatClient.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.orchestration.llm;
+
+import com.aiworkflow.workmanagement.orchestration.domain.LlmChatResponse;
+import com.aiworkflow.workmanagement.orchestration.domain.LlmRoleResolution;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
+
+/**
+ * Routes LLM calls to provider clients based on role mappings.
+ */
+@Component
+@Primary
+public class RoutingLlmChatClient implements LLMChatClient {
+
+<span class="fc" id="L17">    private static final Logger logger = LoggerFactory.getLogger(RoutingLlmChatClient.class);</span>
+
+    private final LlmProviderRegistry providerRegistry;
+    private final LlmRoleMappingResolver roleMappingResolver;
+
+<span class="fc" id="L22">    public RoutingLlmChatClient(LlmProviderRegistry providerRegistry, LlmRoleMappingResolver roleMappingResolver) {</span>
+<span class="fc" id="L23">        this.providerRegistry = providerRegistry;</span>
+<span class="fc" id="L24">        this.roleMappingResolver = roleMappingResolver;</span>
+<span class="fc" id="L25">    }</span>
+
+    @Override
+    public LlmChatResponse generate(String roleName, String prompt) {
+<span class="fc" id="L29">        LlmRoleResolution resolution = roleMappingResolver.resolve(roleName);</span>
+<span class="fc" id="L30">        LLMChatClient client = providerRegistry.getClient(resolution.getProvider());</span>
+<span class="fc bfc" id="L31" title="All 2 branches covered.">        if (client != null) {</span>
+<span class="fc" id="L32">            LlmChatResponse response = client.generate(roleName, prompt);</span>
+<span class="fc" id="L33">            return enrichResponse(response, resolution);</span>
+        }
+
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        for (String fallback : resolution.getFallbackProviders()) {</span>
+<span class="fc" id="L37">            LLMChatClient fallbackClient = providerRegistry.getClient(fallback);</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">            if (fallbackClient != null) {</span>
+<span class="fc" id="L39">                LlmChatResponse response = fallbackClient.generate(roleName, prompt);</span>
+<span class="fc" id="L40">                return enrichResponse(response, resolution);</span>
+            }
+<span class="nc" id="L42">        }</span>
+
+<span class="nc" id="L44">        logger.warn(&quot;No LLM provider resolved for role '{}'&quot;, roleName);</span>
+<span class="nc" id="L45">        return new LlmChatResponse(&quot;&quot;, resolution.getProvider(), resolution.getModel(), null);</span>
+    }
+
+    private LlmChatResponse enrichResponse(LlmChatResponse response, LlmRoleResolution resolution) {
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">        if (response == null) {</span>
+<span class="nc" id="L50">            return new LlmChatResponse(&quot;&quot;, resolution.getProvider(), resolution.getModel(), null);</span>
+        }
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        String provider = response.getProvider() != null ? response.getProvider() : resolution.getProvider();</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">        String model = response.getModel() != null ? response.getModel() : resolution.getModel();</span>
+<span class="fc" id="L54">        return new LlmChatResponse(response.getText(), provider, model, response.getUsage());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

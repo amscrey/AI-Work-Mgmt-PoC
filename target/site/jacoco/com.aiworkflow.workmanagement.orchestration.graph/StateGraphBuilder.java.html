@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StateGraphBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.orchestration.graph</a> &gt; <span class="el_source">StateGraphBuilder.java</span></div><h1>StateGraphBuilder.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.orchestration.graph;
+
+import com.aiworkflow.workmanagement.orchestration.domain.ArtifactReference;
+import com.aiworkflow.workmanagement.orchestration.domain.OrchestrationState;
+import com.aiworkflow.workmanagement.orchestration.node.NodeAction;
+import org.bsc.langgraph4j.CompiledGraph;
+import org.bsc.langgraph4j.GraphStateException;
+import org.bsc.langgraph4j.StateGraph;
+import org.bsc.langgraph4j.state.AgentState;
+import org.bsc.langgraph4j.state.Channel;
+import org.bsc.langgraph4j.state.Channels;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.bsc.langgraph4j.StateGraph.END;
+import static org.bsc.langgraph4j.StateGraph.START;
+import static org.bsc.langgraph4j.action.AsyncNodeAction.node_async;
+
+/**
+ * Builder for constructing langgraph4j StateGraph from NodeAction implementations.
+ * &lt;p&gt;
+ * This class creates a StateGraph workflow with nodes connected in a linear sequence:
+ * research → planning → design → testStrategy
+ * &lt;p&gt;
+ * The StateGraph uses the Appender reducer to accumulate artifacts across nodes.
+ * Each node receives the state from the previous node, executes its logic,
+ * and returns updated state with new artifacts appended.
+ *
+ * &lt;h2&gt;Graph Structure&lt;/h2&gt;
+ * &lt;pre&gt;
+ * START → research → planning → design → testStrategy → END
+ * &lt;/pre&gt;
+ *
+ * &lt;h2&gt;State Conversion&lt;/h2&gt;
+ * This builder handles conversion between OrchestrationState (domain) and AgentState (langgraph4j):
+ * &lt;ul&gt;
+ *   &lt;li&gt;AgentState created by factory function from Map&lt;/li&gt;
+ *   &lt;li&gt;NodeActions receive OrchestrationState (via fromAgentState conversion)&lt;/li&gt;
+ *   &lt;li&gt;Node results converted back to Map via toAgentState&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * &lt;h2&gt;Node Wrapping&lt;/h2&gt;
+ * NodeAction implementations work with OrchestrationState (convenient API).
+ * This builder wraps NodeActions using node_async() to make them compatible with StateGraph.
+ *
+ * &lt;h2&gt;Usage Example&lt;/h2&gt;
+ * &lt;pre&gt;{@code
+ * // Build graph
+ * CompiledGraph&lt;AgentState&gt; graph = stateGraphBuilder.buildGraph(templateNodes);
+ *
+ * // Execute graph
+ * OrchestrationState initialState = new OrchestrationState();
+ * initialState.setWorkIntent(&quot;Research game mechanics&quot;);
+ * AgentState result = graph.invoke(initialState.toAgentState().data()).orElseThrow();
+ * OrchestrationState finalState = OrchestrationState.fromAgentState(result);
+ * }&lt;/pre&gt;
+ *
+ * @see NodeAction
+ * @see OrchestrationState
+ * @see StateGraph
+ */
+@Component
+<span class="fc" id="L69">public class StateGraphBuilder {</span>
+
+<span class="fc" id="L71">    private static final Logger logger = LoggerFactory.getLogger(StateGraphBuilder.class);</span>
+
+    // Node names (must match expected order)
+    private static final String NODE_RESEARCH = &quot;research&quot;;
+    private static final String NODE_PLANNING = &quot;planning&quot;;
+    private static final String NODE_DESIGN = &quot;design&quot;;
+    private static final String NODE_TEST_STRATEGY = &quot;testStrategy&quot;;
+
+    /**
+     * Schema definition for StateGraph.
+     * Uses Appender channel for artifacts to accumulate them across nodes.
+     */
+<span class="fc" id="L83">    private static final Map&lt;String, Channel&lt;?&gt;&gt; SCHEMA = Map.of(</span>
+<span class="fc" id="L84">        OrchestrationState.ARTIFACTS_CREATED, Channels.&lt;ArtifactReference&gt;appender(ArrayList::new)</span>
+    );
+
+    /**
+     * Builds a compiled StateGraph from the provided NodeAction implementations.
+     * &lt;p&gt;
+     * This method:
+     * &lt;ol&gt;
+     *   &lt;li&gt;Creates a StateGraph with AgentState schema and factory&lt;/li&gt;
+     *   &lt;li&gt;Adds nodes by wrapping NodeActions with node_async()&lt;/li&gt;
+     *   &lt;li&gt;Defines edges (START → research → planning → design → testStrategy → END)&lt;/li&gt;
+     *   &lt;li&gt;Compiles and returns the graph&lt;/li&gt;
+     * &lt;/ol&gt;
+     *
+     * @param nodeActions list of NodeAction implementations (must contain 4 nodes in order)
+     * @return compiled graph ready for invocation
+     * @throws IllegalArgumentException if nodeActions is null or doesn't contain exactly 4 nodes
+     * @throws RuntimeException if graph construction fails
+     */
+    public CompiledGraph&lt;AgentState&gt; buildGraph(List&lt;NodeAction&gt; nodeActions) {
+<span class="pc bpc" id="L104" title="2 of 4 branches missed.">        if (nodeActions == null || nodeActions.size() != 4) {</span>
+<span class="nc" id="L105">            throw new IllegalArgumentException(</span>
+                &quot;Expected exactly 4 node actions (research, planning, design, testStrategy), got: &quot; +
+<span class="nc bnc" id="L107" title="All 2 branches missed.">                (nodeActions != null ? nodeActions.size() : &quot;null&quot;)</span>
+            );
+        }
+
+<span class="fc" id="L111">        logger.info(&quot;Building StateGraph with {} nodes&quot;, nodeActions.size());</span>
+
+        try {
+            // Create StateGraph with schema and factory function
+<span class="fc" id="L115">            StateGraph&lt;AgentState&gt; graph = new StateGraph&lt;&gt;(SCHEMA, AgentState::new);</span>
+
+            // Add nodes in order: research, planning, design, testStrategy
+            // Wrap each NodeAction with node_async() for compatibility
+<span class="fc" id="L119">            graph.addNode(NODE_RESEARCH, node_async(wrapNodeAction(nodeActions.get(0), NODE_RESEARCH)));</span>
+<span class="fc" id="L120">            graph.addNode(NODE_PLANNING, node_async(wrapNodeAction(nodeActions.get(1), NODE_PLANNING)));</span>
+<span class="fc" id="L121">            graph.addNode(NODE_DESIGN, node_async(wrapNodeAction(nodeActions.get(2), NODE_DESIGN)));</span>
+<span class="fc" id="L122">            graph.addNode(NODE_TEST_STRATEGY, node_async(wrapNodeAction(nodeActions.get(3), NODE_TEST_STRATEGY)));</span>
+
+            // Define edges (linear flow)
+<span class="fc" id="L125">            graph.addEdge(START, NODE_RESEARCH);</span>
+<span class="fc" id="L126">            graph.addEdge(NODE_RESEARCH, NODE_PLANNING);</span>
+<span class="fc" id="L127">            graph.addEdge(NODE_PLANNING, NODE_DESIGN);</span>
+<span class="fc" id="L128">            graph.addEdge(NODE_DESIGN, NODE_TEST_STRATEGY);</span>
+<span class="fc" id="L129">            graph.addEdge(NODE_TEST_STRATEGY, END);</span>
+
+            // Compile graph
+<span class="fc" id="L132">            CompiledGraph&lt;AgentState&gt; compiled = graph.compile();</span>
+<span class="fc" id="L133">            logger.info(&quot;StateGraph compiled successfully&quot;);</span>
+
+<span class="fc" id="L135">            return compiled;</span>
+
+<span class="nc" id="L137">        } catch (GraphStateException e) {</span>
+<span class="nc" id="L138">            logger.error(&quot;Failed to build StateGraph: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L139">            throw new RuntimeException(&quot;StateGraph construction failed: &quot; + e.getMessage(), e);</span>
+        }
+    }
+
+    /**
+     * Wraps a NodeAction (works with OrchestrationState) as a langgraph4j node function.
+     * &lt;p&gt;
+     * This wrapper:
+     * &lt;ol&gt;
+     *   &lt;li&gt;Converts AgentState → OrchestrationState (via fromAgentState)&lt;/li&gt;
+     *   &lt;li&gt;Executes NodeAction with mutable OrchestrationState&lt;/li&gt;
+     *   &lt;li&gt;Returns Map of state updates (for StateGraph to merge)&lt;/li&gt;
+     * &lt;/ol&gt;
+     *
+     * @param nodeAction the NodeAction to wrap
+     * @param nodeName the node name (for logging)
+     * @return wrapped function compatible with langgraph4j
+     */
+    private org.bsc.langgraph4j.action.NodeAction&lt;AgentState&gt; wrapNodeAction(
+        NodeAction nodeAction,
+        String nodeName
+    ) {
+<span class="fc" id="L161">        return agentState -&gt; {</span>
+<span class="fc" id="L162">            logger.debug(&quot;Executing node: {}&quot;, nodeName);</span>
+
+            // Convert AgentState → OrchestrationState (mutable domain object)
+<span class="fc" id="L165">            OrchestrationState state = OrchestrationState.fromAgentState(agentState);</span>
+
+            // Capture current artifacts to compute delta for Appender reducer
+<span class="fc" id="L168">            List&lt;ArtifactReference&gt; beforeArtifacts = new ArrayList&lt;&gt;(state.getArtifactsCreated());</span>
+
+            // Execute node (mutates state and returns it)
+<span class="fc" id="L171">            OrchestrationState updatedState = nodeAction.execute(state);</span>
+
+<span class="fc" id="L173">            List&lt;ArtifactReference&gt; afterArtifacts = updatedState.getArtifactsCreated();</span>
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">            List&lt;ArtifactReference&gt; newArtifacts = afterArtifacts.size() &gt; beforeArtifacts.size()</span>
+<span class="fc" id="L175">                ? new ArrayList&lt;&gt;(afterArtifacts.subList(beforeArtifacts.size(), afterArtifacts.size()))</span>
+<span class="pc" id="L176">                : new ArrayList&lt;&gt;();</span>
+
+            // Convert back to AgentState updates; only send delta artifacts for Appender reducer
+<span class="fc" id="L179">            logger.debug(&quot;Node {} completed. New artifacts: {}&quot;, nodeName, newArtifacts.size());</span>
+
+<span class="fc" id="L181">            Map&lt;String, Object&gt; updates = new HashMap&lt;&gt;(updatedState.data());</span>
+<span class="fc" id="L182">            updates.put(OrchestrationState.ARTIFACTS_CREATED, newArtifacts);</span>
+
+<span class="fc" id="L184">            return updates;</span>
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

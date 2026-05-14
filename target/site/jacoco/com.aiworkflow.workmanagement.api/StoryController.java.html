@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StoryController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.api</a> &gt; <span class="el_source">StoryController.java</span></div><h1>StoryController.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.api;
+
+import com.aiworkflow.workmanagement.api.dto.StoryCreateRequest;
+import com.aiworkflow.workmanagement.api.dto.StoryResponse;
+import com.aiworkflow.workmanagement.api.dto.StoryTransitionRequest;
+import com.aiworkflow.workmanagement.api.dto.StoryUpdateRequest;
+import com.aiworkflow.workmanagement.application.command.CreateStoryCommand;
+import com.aiworkflow.workmanagement.application.command.TransitionStoryCommand;
+import com.aiworkflow.workmanagement.application.command.UpdateStoryCommand;
+import com.aiworkflow.workmanagement.application.service.StoryService;
+import com.aiworkflow.workmanagement.domain.model.PrioritizationState;
+import com.aiworkflow.workmanagement.domain.model.Role;
+import com.aiworkflow.workmanagement.domain.model.WorkflowState;
+import com.aiworkflow.workmanagement.domain.valueobject.StoryId;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * REST endpoints for stories.
+ */
+@RestController
+@RequestMapping(&quot;/api/v1/stories&quot;)
+public class StoryController {
+
+    private final StoryService storyService;
+
+<span class="fc" id="L39">    public StoryController(StoryService storyService) {</span>
+<span class="fc" id="L40">        this.storyService = storyService;</span>
+<span class="fc" id="L41">    }</span>
+
+    @PostMapping
+    public ResponseEntity&lt;StoryResponse&gt; createStory(@Valid @RequestBody StoryCreateRequest request) {
+<span class="fc" id="L45">        CreateStoryCommand command = new CreateStoryCommand(</span>
+<span class="fc" id="L46">            request.getStoryId(),</span>
+<span class="fc" id="L47">            request.getTitle(),</span>
+<span class="fc" id="L48">            request.getSummary(),</span>
+<span class="fc" id="L49">            request.getDescription(),</span>
+<span class="fc" id="L50">            request.getAuthor(),</span>
+<span class="fc" id="L51">            request.getInitialState(),</span>
+<span class="fc" id="L52">            request.getPrioritization(),</span>
+<span class="fc" id="L53">            request.getAcceptanceCriteria(),</span>
+<span class="fc" id="L54">            request.getTags(),</span>
+<span class="fc" id="L55">            request.getEstimatedEffort()</span>
+        );
+<span class="fc" id="L57">        return ResponseEntity.status(HttpStatus.CREATED).body(StoryResponse.from(storyService.createStory(command)));</span>
+    }
+
+    @GetMapping(&quot;/{storyId}&quot;)
+    public ResponseEntity&lt;StoryResponse&gt; getStory(@PathVariable String storyId) {
+<span class="nc" id="L62">        return storyService.findById(new StoryId(storyId))</span>
+<span class="nc" id="L63">            .map(story -&gt; ResponseEntity.ok(StoryResponse.from(story)))</span>
+<span class="nc" id="L64">            .orElseGet(() -&gt; ResponseEntity.notFound().build());</span>
+    }
+
+    @GetMapping
+    public ResponseEntity&lt;List&lt;StoryResponse&gt;&gt; queryStories(
+        @RequestParam(required = false) WorkflowState state,
+        @RequestParam(required = false) PrioritizationState prioritization
+    ) {
+<span class="pc bpc" id="L72" title="3 of 4 branches missed.">        if (state == null &amp;&amp; prioritization == null) {</span>
+<span class="nc" id="L73">            throw new IllegalArgumentException(&quot;At least one filter (state or prioritization) is required&quot;);</span>
+        }
+        List&lt;com.aiworkflow.workmanagement.domain.model.Story&gt; stories;
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">        if (state != null) {</span>
+<span class="fc" id="L77">            stories = storyService.findByState(state);</span>
+        } else {
+<span class="nc" id="L79">            stories = storyService.findByPrioritization(prioritization);</span>
+        }
+<span class="pc bpc" id="L81" title="2 of 4 branches missed.">        if (state != null &amp;&amp; prioritization != null) {</span>
+<span class="nc" id="L82">            stories = stories.stream()</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">                .filter(story -&gt; story.getPrioritizationState() == prioritization)</span>
+<span class="nc" id="L84">                .collect(Collectors.toList());</span>
+        }
+<span class="fc" id="L86">        return ResponseEntity.ok(stories.stream().map(StoryResponse::from).collect(Collectors.toList()));</span>
+    }
+
+    @PatchMapping(&quot;/{storyId}&quot;)
+    public ResponseEntity&lt;StoryResponse&gt; updateStory(
+        @PathVariable String storyId,
+        @Valid @RequestBody StoryUpdateRequest request
+    ) {
+<span class="nc" id="L94">        UpdateStoryCommand command = new UpdateStoryCommand(</span>
+            storyId,
+<span class="nc" id="L96">            request.getTitle(),</span>
+<span class="nc" id="L97">            request.getSummary(),</span>
+<span class="nc" id="L98">            request.getDescription(),</span>
+<span class="nc" id="L99">            request.getAcceptanceCriteria(),</span>
+<span class="nc" id="L100">            request.getTags(),</span>
+<span class="nc" id="L101">            request.getEstimatedEffort()</span>
+        );
+<span class="nc" id="L103">        return ResponseEntity.ok(StoryResponse.from(storyService.updateStory(command)));</span>
+    }
+
+    @PostMapping(&quot;/{storyId}/transition&quot;)
+    public ResponseEntity&lt;StoryResponse&gt; transitionStory(
+        @PathVariable String storyId,
+        @Valid @RequestBody StoryTransitionRequest request
+    ) {
+<span class="nc" id="L111">        Role initiator = parseRole(request.getInitiatorRole());</span>
+<span class="nc" id="L112">        TransitionStoryCommand command = new TransitionStoryCommand(</span>
+            storyId,
+<span class="nc" id="L114">            request.getTargetState(),</span>
+            initiator,
+<span class="nc" id="L116">            request.getReason()</span>
+        );
+<span class="nc" id="L118">        return ResponseEntity.ok(StoryResponse.from(storyService.transitionStory(command)));</span>
+    }
+
+    private Role parseRole(String roleName) {
+<span class="nc bnc" id="L122" title="All 4 branches missed.">        if (roleName == null || roleName.isBlank()) {</span>
+<span class="nc" id="L123">            return Role.SYSTEM;</span>
+        }
+<span class="nc" id="L125">        String normalized = roleName.trim().toUpperCase().replace('-', '_');</span>
+<span class="nc" id="L126">        return Role.valueOf(normalized);</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

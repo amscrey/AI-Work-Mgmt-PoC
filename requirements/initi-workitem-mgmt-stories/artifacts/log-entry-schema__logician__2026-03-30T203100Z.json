@@ -1,0 +1,159 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://workmanagement.example.com/schemas/log-entry.schema.json",
+  "title": "Activity Log Entry",
+  "description": "Schema for JSON Lines log entries in agents/logs/<role>__<yyyy-mm-dd>.log files",
+  "type": "object",
+  "required": ["timestamp", "role", "activity", "outcome"],
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when activity occurred",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+      "examples": ["2026-03-30T14:05:12Z"]
+    },
+    "role": {
+      "type": "string",
+      "description": "Role performing the activity (not LLM name)",
+      "enum": [
+        "orchestrator",
+        "designer",
+        "logician",
+        "coder",
+        "creative-writer",
+        "artist",
+        "tester",
+        "reviewer",
+        "researcher",
+        "documenter"
+      ],
+      "examples": ["orchestrator", "coder", "tester"]
+    },
+    "activity": {
+      "type": "string",
+      "description": "Type of activity performed",
+      "enum": [
+        "story_created",
+        "story_updated",
+        "task_created",
+        "task_updated",
+        "work_started",
+        "work_completed",
+        "artifact_created",
+        "comment_created",
+        "state_transition",
+        "prioritization_changed",
+        "human_interaction",
+        "role_delegated",
+        "validation_performed",
+        "error_occurred",
+        "test_executed",
+        "bug_found",
+        "refactoring_done",
+        "documentation_updated",
+        "reference_promoted"
+      ]
+    },
+    "outcome": {
+      "type": "string",
+      "description": "Result of the activity",
+      "enum": ["success", "failure", "partial"],
+      "examples": ["success", "failure"]
+    },
+    "story_id": {
+      "type": "string",
+      "description": "Story ID if applicable (format: STORY-<id>-<slug>)",
+      "pattern": "^STORY-\\d{1,}-[a-z0-9-]+$",
+      "examples": ["STORY-123-dashboard-ui"]
+    },
+    "task_id": {
+      "type": "string",
+      "description": "Task ID if applicable (format: TASK-<id>-<slug>)",
+      "pattern": "^TASK-\\d{1,}-[a-z0-9-]+$",
+      "examples": ["TASK-001-chart-component"]
+    },
+    "details": {
+      "type": "object",
+      "description": "Activity-specific details (flexible structure)",
+      "additionalProperties": true,
+      "examples": [
+        {"title": "Dashboard UI", "state": "todo"},
+        {"artifact": "mockup__designer__2026-03-30T141230Z.png"},
+        {"from": "todo", "to": "in-progress", "reason": "work started"}
+      ]
+    },
+    "error": {
+      "type": "string",
+      "description": "Error message if outcome=failure",
+      "examples": ["InvalidTransitionException: Cannot transition from TODO to DONE"]
+    }
+  },
+  "if": {
+    "properties": { "outcome": { "const": "failure" } }
+  },
+  "then": {
+    "required": ["error"]
+  },
+  "examples": [
+    {
+      "timestamp": "2026-03-30T14:05:12Z",
+      "role": "orchestrator",
+      "activity": "story_created",
+      "story_id": "STORY-123",
+      "details": {
+        "title": "Dashboard redesign",
+        "state": "todo",
+        "prioritization": "backlog"
+      },
+      "outcome": "success"
+    },
+    {
+      "timestamp": "2026-03-30T14:12:30Z",
+      "role": "designer",
+      "activity": "artifact_created",
+      "story_id": "STORY-123",
+      "details": {
+        "artifact": "dashboard-mockup__designer__2026-03-30T141230Z.png",
+        "type": "mockup"
+      },
+      "outcome": "success"
+    },
+    {
+      "timestamp": "2026-03-30T14:20:00Z",
+      "role": "orchestrator",
+      "activity": "state_transition",
+      "story_id": "STORY-123",
+      "details": {
+        "from": "todo",
+        "to": "in-progress",
+        "reason": "designer started work"
+      },
+      "outcome": "success"
+    },
+    {
+      "timestamp": "2026-03-30T14:25:00Z",
+      "role": "coder",
+      "activity": "work_completed",
+      "story_id": "STORY-456",
+      "details": {
+        "artifacts_created": 2,
+        "comments_created": 1,
+        "duration_minutes": 45
+      },
+      "outcome": "success"
+    },
+    {
+      "timestamp": "2026-03-30T14:30:00Z",
+      "role": "tester",
+      "activity": "error_occurred",
+      "story_id": "STORY-456",
+      "details": {
+        "operation": "validate_state_transition",
+        "attempted_transition": "TODO -> DONE"
+      },
+      "error": "InvalidTransitionException: Agent cannot transition directly from TODO to DONE",
+      "outcome": "failure"
+    }
+  ]
+}

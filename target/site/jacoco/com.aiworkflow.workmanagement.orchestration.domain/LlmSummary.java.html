@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LlmSummary.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.orchestration.domain</a> &gt; <span class="el_source">LlmSummary.java</span></div><h1>LlmSummary.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.orchestration.domain;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Summary of effective LLM configuration for reporting.
+ */
+public class LlmSummary {
+    private final String defaultProvider;
+    private final Map&lt;String, LlmProviderConfig&gt; providers;
+    private final Map&lt;String, LlmRoleMapping&gt; roleMappings;
+    private final LlmConfigDiagnostics diagnostics;
+
+    public LlmSummary(
+        String defaultProvider,
+        Map&lt;String, LlmProviderConfig&gt; providers,
+        Map&lt;String, LlmRoleMapping&gt; roleMappings,
+        LlmConfigDiagnostics diagnostics
+<span class="fc" id="L21">    ) {</span>
+<span class="fc" id="L22">        this.defaultProvider = defaultProvider;</span>
+<span class="pc bpc" id="L23" title="1 of 2 branches missed.">        this.providers = providers == null ? Map.of() : Map.copyOf(providers);</span>
+<span class="pc bpc" id="L24" title="1 of 2 branches missed.">        this.roleMappings = roleMappings == null ? Map.of() : Map.copyOf(roleMappings);</span>
+<span class="fc" id="L25">        this.diagnostics = diagnostics;</span>
+<span class="fc" id="L26">    }</span>
+
+    public String getDefaultProvider() {
+<span class="fc" id="L29">        return defaultProvider;</span>
+    }
+
+    public Map&lt;String, LlmProviderConfig&gt; getProviders() {
+<span class="fc" id="L33">        return Collections.unmodifiableMap(providers);</span>
+    }
+
+    public Map&lt;String, LlmRoleMapping&gt; getRoleMappings() {
+<span class="fc" id="L37">        return Collections.unmodifiableMap(roleMappings);</span>
+    }
+
+    public LlmConfigDiagnostics getDiagnostics() {
+<span class="fc" id="L41">        return diagnostics;</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

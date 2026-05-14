@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StateTransitionValidator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.domain.service</a> &gt; <span class="el_source">StateTransitionValidator.java</span></div><h1>StateTransitionValidator.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.domain.service;
+
+import com.aiworkflow.workmanagement.domain.model.Role;
+import com.aiworkflow.workmanagement.domain.model.WorkflowState;
+import com.aiworkflow.workmanagement.domain.model.TaskState;
+import com.aiworkflow.workmanagement.domain.model.Story;
+import com.aiworkflow.workmanagement.domain.model.Task;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Domain service responsible for validating state transitions.
+ * Encapsulates complex business rules for state changes.
+ */
+<span class="fc" id="L16">public class StateTransitionValidator {</span>
+
+    /**
+     * Alias for validateWorkflowTransition() for backward compatibility.
+     */
+    public void validateTransition(Story story, WorkflowState targetState, Role initiator) {
+<span class="nc" id="L22">        validateWorkflowTransition(story, targetState, initiator);</span>
+<span class="nc" id="L23">    }</span>
+
+    /**
+     * Validates a workflow state transition for a story.
+     *
+     * @param story     The story to transition
+     * @param toState   The target state
+     * @param initiator The role initiating the transition
+     * @throws InvalidStateTransitionException if the transition is invalid
+     */
+    public void validateWorkflowTransition(Story story, WorkflowState toState, Role initiator) {
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (story == null) {</span>
+<span class="fc" id="L35">            throw new IllegalArgumentException(&quot;Story cannot be null&quot;);</span>
+        }
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        if (toState == null) {</span>
+<span class="fc" id="L38">            throw new IllegalArgumentException(&quot;Target state cannot be null&quot;);</span>
+        }
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        if (initiator == null) {</span>
+<span class="fc" id="L41">            throw new IllegalArgumentException(&quot;Initiator role cannot be null&quot;);</span>
+        }
+
+<span class="fc" id="L44">        WorkflowState currentState = story.getWorkflowState();</span>
+
+        // Check if transition is allowed by the state machine
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        if (!currentState.canTransitionTo(toState, initiator)) {</span>
+<span class="fc" id="L48">            throw new InvalidStateTransitionException(currentState, toState, initiator);</span>
+        }
+
+        // Additional business rules
+<span class="fc" id="L52">        validateBusinessRules(story, currentState, toState, initiator);</span>
+<span class="fc" id="L53">    }</span>
+
+    /**
+     * Validates a task state transition.
+     *
+     * @param task    The task to transition
+     * @param toState The target state
+     * @throws InvalidStateTransitionException if the transition is invalid
+     */
+    public void validateTaskTransition(Task task, TaskState toState) {
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (task == null) {</span>
+<span class="nc" id="L64">            throw new IllegalArgumentException(&quot;Task cannot be null&quot;);</span>
+        }
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (toState == null) {</span>
+<span class="nc" id="L67">            throw new IllegalArgumentException(&quot;Target state cannot be null&quot;);</span>
+        }
+
+<span class="nc" id="L70">        TaskState currentState = task.getState();</span>
+
+        // Check if transition is allowed by the state machine
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (!currentState.canTransitionTo(toState)) {</span>
+<span class="nc" id="L74">            throw new InvalidStateTransitionException(currentState, toState);</span>
+        }
+<span class="nc" id="L76">    }</span>
+
+    /**
+     * Validates additional business rules for workflow transitions.
+     */
+    private void validateBusinessRules(Story story, WorkflowState fromState, WorkflowState toState, Role initiator) {
+        // Rule: Agents cannot complete work directly, must go through approval
+<span class="pc bpc" id="L83" title="1 of 4 branches missed.">        if (initiator.isAgent() &amp;&amp; toState == WorkflowState.DONE) {</span>
+<span class="nc" id="L84">            throw new InvalidStateTransitionException(</span>
+                &quot;Agents cannot transition directly to DONE. Must go through AWAITING_APPROVAL.&quot;
+            );
+        }
+
+        // Rule: Cannot transition to AWAITING_APPROVAL if there are no artifacts
+<span class="fc bfc" id="L90" title="All 4 branches covered.">        if (toState == WorkflowState.AWAITING_APPROVAL &amp;&amp; story.getArtifacts().isEmpty()) {</span>
+<span class="fc" id="L91">            throw new InvalidStateTransitionException(</span>
+                &quot;Cannot transition to AWAITING_APPROVAL without any artifacts&quot;
+            );
+        }
+
+        // Rule: Only approvers can approve (transition from AWAITING_APPROVAL to DONE)
+<span class="fc bfc" id="L97" title="All 4 branches covered.">        if (fromState == WorkflowState.AWAITING_APPROVAL &amp;&amp;</span>
+            toState == WorkflowState.DONE &amp;&amp;
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">            !initiator.canApprove()) {</span>
+<span class="nc" id="L100">            throw new InvalidStateTransitionException(</span>
+                &quot;Only HUMAN_APPROVER role can approve work (transition from AWAITING_APPROVAL to DONE)&quot;
+            );
+        }
+
+        // Rule: Cannot start work (TODO -&gt; IN_PROGRESS) if not assigned
+<span class="fc bfc" id="L106" title="All 4 branches covered.">        if (fromState == WorkflowState.TODO &amp;&amp;</span>
+            toState == WorkflowState.IN_PROGRESS &amp;&amp;
+<span class="fc bfc" id="L108" title="All 2 branches covered.">            story.getAssignedTo() == null) {</span>
+<span class="fc" id="L109">            throw new InvalidStateTransitionException(</span>
+                &quot;Cannot start work on unassigned story&quot;
+            );
+        }
+<span class="fc" id="L113">    }</span>
+
+    /**
+     * Checks if a workflow transition is valid without throwing an exception.
+     *
+     * @param story     The story to transition
+     * @param toState   The target state
+     * @param initiator The role initiating the transition
+     * @return true if the transition is valid, false otherwise
+     */
+    public boolean isValidWorkflowTransition(Story story, WorkflowState toState, Role initiator) {
+        try {
+<span class="fc" id="L125">            validateWorkflowTransition(story, toState, initiator);</span>
+<span class="fc" id="L126">            return true;</span>
+<span class="fc" id="L127">        } catch (InvalidStateTransitionException e) {</span>
+<span class="fc" id="L128">            return false;</span>
+        }
+    }
+
+    /**
+     * Checks if a task transition is valid without throwing an exception.
+     *
+     * @param task    The task to transition
+     * @param toState The target state
+     * @return true if the transition is valid, false otherwise
+     */
+    public boolean isValidTaskTransition(Task task, TaskState toState) {
+        try {
+<span class="nc" id="L141">            validateTaskTransition(task, toState);</span>
+<span class="nc" id="L142">            return true;</span>
+<span class="nc" id="L143">        } catch (InvalidStateTransitionException e) {</span>
+<span class="nc" id="L144">            return false;</span>
+        }
+    }
+
+    /**
+     * Gets all valid next states for a story's current workflow state.
+     *
+     * @param story     The story
+     * @param initiator The role initiating the transition
+     * @return List of valid next states
+     */
+    public List&lt;WorkflowState&gt; getValidNextWorkflowStates(Story story, Role initiator) {
+<span class="fc" id="L156">        List&lt;WorkflowState&gt; validStates = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L158" title="All 2 branches covered.">        for (WorkflowState state : WorkflowState.values()) {</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">            if (isValidWorkflowTransition(story, state, initiator)) {</span>
+<span class="fc" id="L160">                validStates.add(state);</span>
+            }
+        }
+
+<span class="fc" id="L164">        return validStates;</span>
+    }
+
+    /**
+     * Gets all valid next states for a task's current state.
+     *
+     * @param task The task
+     * @return List of valid next states
+     */
+    public List&lt;TaskState&gt; getValidNextTaskStates(Task task) {
+<span class="nc" id="L174">        List&lt;TaskState&gt; validStates = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L176" title="All 2 branches missed.">        for (TaskState state : TaskState.values()) {</span>
+<span class="nc bnc" id="L177" title="All 2 branches missed.">            if (isValidTaskTransition(task, state)) {</span>
+<span class="nc" id="L178">                validStates.add(state);</span>
+            }
+        }
+
+<span class="nc" id="L182">        return validStates;</span>
+    }
+
+    /**
+     * Validates that all tasks in a story are completed before marking story as done.
+     *
+     * @param story The story to validate
+     * @throws InvalidStateTransitionException if not all tasks are completed
+     */
+    public void validateAllTasksCompleted(Story story) {
+<span class="nc bnc" id="L192" title="All 2 branches missed.">        if (!story.getTasks().isEmpty()) {</span>
+<span class="nc" id="L193">            long incompleteTasks = story.getTasks().stream()</span>
+<span class="nc bnc" id="L194" title="All 2 branches missed.">                .filter(task -&gt; !task.isCompleted())</span>
+<span class="nc" id="L195">                .count();</span>
+
+<span class="nc bnc" id="L197" title="All 2 branches missed.">            if (incompleteTasks &gt; 0) {</span>
+<span class="nc" id="L198">                throw new InvalidStateTransitionException(</span>
+<span class="nc" id="L199">                    String.format(&quot;Cannot complete story with %d incomplete tasks&quot;, incompleteTasks)</span>
+                );
+            }
+        }
+<span class="nc" id="L203">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

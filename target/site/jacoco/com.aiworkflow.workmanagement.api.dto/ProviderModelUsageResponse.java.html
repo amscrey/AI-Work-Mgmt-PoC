@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProviderModelUsageResponse.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.api.dto</a> &gt; <span class="el_source">ProviderModelUsageResponse.java</span></div><h1>ProviderModelUsageResponse.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.api.dto;
+
+import com.aiworkflow.workmanagement.orchestration.domain.ProviderModelUsage;
+
+public class ProviderModelUsageResponse {
+    private final String provider;
+    private final String model;
+    private final TokenTotalsResponse exactTotals;
+    private final TokenTotalsResponse estimatedTotals;
+
+    public ProviderModelUsageResponse(
+        String provider,
+        String model,
+        TokenTotalsResponse exactTotals,
+        TokenTotalsResponse estimatedTotals
+<span class="nc" id="L16">    ) {</span>
+<span class="nc" id="L17">        this.provider = provider;</span>
+<span class="nc" id="L18">        this.model = model;</span>
+<span class="nc" id="L19">        this.exactTotals = exactTotals;</span>
+<span class="nc" id="L20">        this.estimatedTotals = estimatedTotals;</span>
+<span class="nc" id="L21">    }</span>
+
+    public static ProviderModelUsageResponse from(ProviderModelUsage usage) {
+<span class="nc" id="L24">        return new ProviderModelUsageResponse(</span>
+<span class="nc" id="L25">            usage.getProvider(),</span>
+<span class="nc" id="L26">            usage.getModel(),</span>
+<span class="nc" id="L27">            TokenTotalsResponse.from(usage.getExactTotals()),</span>
+<span class="nc" id="L28">            TokenTotalsResponse.from(usage.getEstimatedTotals())</span>
+        );
+    }
+
+    public String getProvider() {
+<span class="nc" id="L33">        return provider;</span>
+    }
+
+    public String getModel() {
+<span class="nc" id="L37">        return model;</span>
+    }
+
+    public TokenTotalsResponse getExactTotals() {
+<span class="nc" id="L41">        return exactTotals;</span>
+    }
+
+    public TokenTotalsResponse getEstimatedTotals() {
+<span class="nc" id="L45">        return estimatedTotals;</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

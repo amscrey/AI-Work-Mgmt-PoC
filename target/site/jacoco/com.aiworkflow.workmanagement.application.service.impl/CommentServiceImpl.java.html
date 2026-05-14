@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CommentServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.application.service.impl</a> &gt; <span class="el_source">CommentServiceImpl.java</span></div><h1>CommentServiceImpl.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.application.service.impl;
+
+import com.aiworkflow.workmanagement.application.command.CreateCommentCommand;
+import com.aiworkflow.workmanagement.application.service.ActivityLogger;
+import com.aiworkflow.workmanagement.application.service.CommentService;
+import com.aiworkflow.workmanagement.domain.model.Comment;
+import com.aiworkflow.workmanagement.domain.model.Story;
+import com.aiworkflow.workmanagement.domain.repository.CommentRepository;
+import com.aiworkflow.workmanagement.domain.repository.StoryRepository;
+import com.aiworkflow.workmanagement.domain.valueobject.CommentId;
+import com.aiworkflow.workmanagement.domain.valueobject.StoryId;
+import com.aiworkflow.workmanagement.orchestration.domain.UsageBlock;
+import com.aiworkflow.workmanagement.orchestration.service.UsageBlockFormatter;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+/**
+ * Implementation of CommentService.
+ * Note: Spring annotations will be added when Spring Boot is configured.
+ */
+public class CommentServiceImpl implements CommentService {
+
+    private final CommentRepository commentRepository;
+    private final StoryRepository storyRepository;
+    private final ActivityLogger activityLogger;
+    private final UsageBlockFormatter usageBlockFormatter;
+
+    public CommentServiceImpl(CommentRepository commentRepository,
+                             StoryRepository storyRepository,
+                             ActivityLogger activityLogger) {
+<span class="fc" id="L34">        this(commentRepository, storyRepository, activityLogger, null);</span>
+<span class="fc" id="L35">    }</span>
+
+    public CommentServiceImpl(CommentRepository commentRepository,
+                             StoryRepository storyRepository,
+                             ActivityLogger activityLogger,
+<span class="fc" id="L40">                             UsageBlockFormatter usageBlockFormatter) {</span>
+<span class="fc" id="L41">        this.commentRepository = commentRepository;</span>
+<span class="fc" id="L42">        this.storyRepository = storyRepository;</span>
+<span class="fc" id="L43">        this.activityLogger = activityLogger;</span>
+<span class="fc" id="L44">        this.usageBlockFormatter = usageBlockFormatter;</span>
+<span class="fc" id="L45">    }</span>
+
+    @Override
+    public Comment createComment(CreateCommentCommand command) {
+        try {
+            // Find the parent story
+<span class="fc" id="L51">            StoryId storyId = new StoryId(command.getStoryId());</span>
+<span class="fc" id="L52">            Story story = storyRepository.findById(storyId)</span>
+<span class="fc" id="L53">                .orElseThrow(() -&gt; new StoryNotFoundException(&quot;Story not found: &quot; + command.getStoryId()));</span>
+
+            // Create the comment
+<span class="fc" id="L56">            CommentId commentId = new CommentId(command.getCommentId());</span>
+<span class="fc" id="L57">            String content = command.getContent();</span>
+<span class="fc" id="L58">            UsageBlock usageBlock = null;</span>
+<span class="pc bpc" id="L59" title="1 of 4 branches missed.">            if (command.isIncludeUsageBlock() &amp;&amp; usageBlockFormatter != null) {</span>
+<span class="fc" id="L60">                usageBlock = usageBlockFormatter.format(storyId);</span>
+<span class="fc" id="L61">                content = content + &quot;\n\n&quot; + usageBlock.getText();</span>
+            }
+
+<span class="fc" id="L64">            Comment comment = new Comment(</span>
+                commentId,
+                storyId,
+<span class="fc" id="L67">                command.getAuthor(),</span>
+                content,
+<span class="fc" id="L69">                command.getType()</span>
+            );
+
+            // Save the comment
+<span class="fc" id="L73">            Comment savedComment = commentRepository.save(comment);</span>
+
+            // Add comment to story
+<span class="fc" id="L76">            story.addComment(savedComment);</span>
+<span class="fc" id="L77">            storyRepository.save(story);</span>
+
+            // Log the activity with enriched details
+<span class="fc" id="L80">            Map&lt;String, Object&gt; details = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L81">            details.put(&quot;author&quot;, command.getAuthor());</span>
+<span class="fc" id="L82">            details.put(&quot;type&quot;, command.getType().toString());</span>
+<span class="fc" id="L83">            details.put(&quot;story_id&quot;, command.getStoryId());</span>
+<span class="fc" id="L84">            details.put(&quot;story_title&quot;, story.getTitle());</span>
+<span class="fc" id="L85">            details.put(&quot;content_length&quot;, content.length());</span>
+<span class="fc" id="L86">            details.put(&quot;content_preview&quot;, content.substring(0, Math.min(50, content.length())));</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">            if (command.getExecutionId() != null) {</span>
+<span class="fc" id="L88">                details.put(&quot;execution_id&quot;, command.getExecutionId());</span>
+            }
+<span class="fc bfc" id="L90" title="All 2 branches covered.">            if (usageBlock != null) {</span>
+<span class="fc" id="L91">                details.putAll(usageBlock.getMetrics());</span>
+            }
+<span class="fc" id="L93">            activityLogger.logSuccess(command.getAuthor(), &quot;create_comment&quot;, command.getCommentId(), details);</span>
+
+<span class="fc" id="L95">            return savedComment;</span>
+<span class="fc" id="L96">        } catch (Exception e) {</span>
+<span class="fc" id="L97">            Map&lt;String, Object&gt; failureDetails = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L98">            failureDetails.put(&quot;author&quot;, command.getAuthor());</span>
+<span class="fc" id="L99">            failureDetails.put(&quot;type&quot;, command.getType().toString());</span>
+<span class="fc" id="L100">            failureDetails.put(&quot;story_id&quot;, command.getStoryId());</span>
+<span class="fc" id="L101">            activityLogger.logFailure(command.getAuthor(), &quot;create_comment&quot;, command.getCommentId(), e.getMessage(), failureDetails);</span>
+<span class="fc" id="L102">            throw e;</span>
+        }
+    }
+
+    @Override
+    public Optional&lt;Comment&gt; findById(CommentId commentId) {
+<span class="fc" id="L108">        return commentRepository.findById(commentId);</span>
+    }
+
+    @Override
+    public List&lt;Comment&gt; findByStoryId(StoryId storyId) {
+<span class="fc" id="L113">        return commentRepository.findByStoryId(storyId);</span>
+    }
+
+    @Override
+    public void deleteComment(CommentId commentId) {
+        try {
+            // Try to find the comment first to get author info
+<span class="fc" id="L120">            Optional&lt;Comment&gt; commentOpt = commentRepository.findById(commentId);</span>
+<span class="fc" id="L121">            String role = &quot;system&quot;;</span>
+<span class="fc" id="L122">            Map&lt;String, Object&gt; details = new HashMap&lt;&gt;();</span>
+
+<span class="fc bfc" id="L124" title="All 2 branches covered.">            if (commentOpt.isPresent()) {</span>
+<span class="fc" id="L125">                Comment comment = commentOpt.get();</span>
+<span class="fc" id="L126">                role = comment.getAuthor();</span>
+<span class="fc" id="L127">                details.put(&quot;author&quot;, comment.getAuthor());</span>
+<span class="fc" id="L128">                details.put(&quot;type&quot;, comment.getType().toString());</span>
+<span class="fc" id="L129">                details.put(&quot;story_id&quot;, comment.getStoryId().getValue());</span>
+            }
+
+<span class="fc" id="L132">            commentRepository.delete(commentId);</span>
+<span class="fc" id="L133">            activityLogger.logSuccess(role, &quot;delete_comment&quot;, commentId.getValue(), details);</span>
+<span class="fc" id="L134">        } catch (Exception e) {</span>
+<span class="fc" id="L135">            activityLogger.logFailure(&quot;system&quot;, &quot;delete_comment&quot;, commentId.getValue(), e.getMessage(), null);</span>
+<span class="fc" id="L136">            throw e;</span>
+<span class="fc" id="L137">        }</span>
+<span class="fc" id="L138">    }</span>
+
+    /**
+     * Exception thrown when a story is not found.
+     */
+    public static class StoryNotFoundException extends RuntimeException {
+        public StoryNotFoundException(String message) {
+<span class="fc" id="L145">            super(message);</span>
+<span class="fc" id="L146">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

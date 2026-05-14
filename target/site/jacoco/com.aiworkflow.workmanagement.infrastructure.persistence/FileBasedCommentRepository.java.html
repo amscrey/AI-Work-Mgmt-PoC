@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileBasedCommentRepository.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.infrastructure.persistence</a> &gt; <span class="el_source">FileBasedCommentRepository.java</span></div><h1>FileBasedCommentRepository.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.infrastructure.persistence;
+
+import com.aiworkflow.workmanagement.domain.model.Comment;
+import com.aiworkflow.workmanagement.domain.model.CommentType;
+import com.aiworkflow.workmanagement.domain.repository.CommentRepository;
+import com.aiworkflow.workmanagement.domain.valueobject.CommentId;
+import com.aiworkflow.workmanagement.domain.valueobject.StoryId;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+/**
+ * File-based implementation of CommentRepository.
+ * Stores comments as markdown files in the story's comments directory.
+ *
+ * File structure:
+ * workspace/{prioritization}/{STORY-ID}/comments/comment__{role}__{timestamp}.md
+ *
+ * File format:
+ * ---
+ * type: QUESTION
+ * author: agent
+ * createdAt: 2026-03-30T14:15:30Z
+ * resolved: false
+ * ---
+ * Comment content here...
+ */
+public class FileBasedCommentRepository implements CommentRepository {
+
+    private final Path workspaceRoot;
+
+<span class="fc" id="L39">    public FileBasedCommentRepository(String workspaceRootPath) {</span>
+<span class="fc" id="L40">        this.workspaceRoot = Paths.get(workspaceRootPath);</span>
+<span class="fc" id="L41">    }</span>
+
+    @Override
+    public Comment save(Comment comment) {
+        try {
+<span class="fc" id="L46">            Path commentFile = findCommentFilePath(comment.getId());</span>
+
+<span class="fc bfc" id="L48" title="All 2 branches covered.">            if (commentFile == null) {</span>
+                // New comment - find the story directory
+<span class="fc" id="L50">                commentFile = findStoryCommentsDirectory(comment.getStoryId())</span>
+<span class="fc" id="L51">                    .resolve(comment.getId().getValue());</span>
+            }
+
+            // Write comment as markdown with frontmatter
+<span class="fc" id="L55">            String content = CommentMarkdownFormatter.format(comment);</span>
+<span class="fc" id="L56">            Files.writeString(commentFile, content);</span>
+
+<span class="fc" id="L58">            return comment;</span>
+<span class="nc" id="L59">        } catch (IOException e) {</span>
+<span class="nc" id="L60">            throw new RepositoryException(&quot;Failed to save comment: &quot; + comment.getId().getValue(), e);</span>
+        }
+    }
+
+    @Override
+    public Optional&lt;Comment&gt; findById(CommentId id) {
+        try {
+<span class="fc" id="L67">            Path commentFile = findCommentFilePath(id);</span>
+
+<span class="pc bpc" id="L69" title="1 of 4 branches missed.">            if (commentFile != null &amp;&amp; Files.exists(commentFile)) {</span>
+<span class="fc" id="L70">                String content = Files.readString(commentFile);</span>
+<span class="fc" id="L71">                return Optional.of(CommentMarkdownFormatter.parse(id, content));</span>
+            }
+
+<span class="fc" id="L74">            return Optional.empty();</span>
+<span class="nc" id="L75">        } catch (IOException e) {</span>
+<span class="nc" id="L76">            throw new RepositoryException(&quot;Failed to find comment: &quot; + id.getValue(), e);</span>
+        }
+    }
+
+    @Override
+    public List&lt;Comment&gt; findByStoryId(StoryId storyId) {
+        try {
+<span class="fc" id="L83">            Path commentsDir = findStoryCommentsDirectory(storyId);</span>
+
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">            if (!Files.exists(commentsDir)) {</span>
+<span class="nc" id="L86">                return new ArrayList&lt;&gt;();</span>
+            }
+
+<span class="fc" id="L89">            try (Stream&lt;Path&gt; commentFiles = Files.list(commentsDir)) {</span>
+<span class="fc" id="L90">                return commentFiles</span>
+<span class="fc" id="L91">                    .filter(path -&gt; path.toString().endsWith(&quot;.md&quot;))</span>
+<span class="fc" id="L92">                    .map(commentFile -&gt; {</span>
+                        try {
+<span class="fc" id="L94">                            String fileName = commentFile.getFileName().toString();</span>
+<span class="fc" id="L95">                            CommentId commentId = new CommentId(fileName);</span>
+<span class="fc" id="L96">                            String content = Files.readString(commentFile);</span>
+<span class="fc" id="L97">                            return CommentMarkdownFormatter.parse(commentId, content);</span>
+<span class="nc" id="L98">                        } catch (IOException e) {</span>
+<span class="nc" id="L99">                            throw new RepositoryException(&quot;Failed to read comment file: &quot; + commentFile, e);</span>
+                        }
+                    })
+<span class="fc" id="L102">                    .collect(Collectors.toList());</span>
+            }
+<span class="nc" id="L104">        } catch (IOException e) {</span>
+<span class="nc" id="L105">            throw new RepositoryException(&quot;Failed to find comments for story: &quot; + storyId.getValue(), e);</span>
+        }
+    }
+
+    @Override
+    public void delete(CommentId id) {
+        try {
+<span class="fc" id="L112">            Path commentFile = findCommentFilePath(id);</span>
+
+<span class="fc bfc" id="L114" title="All 2 branches covered.">            if (commentFile == null) {</span>
+<span class="fc" id="L115">                throw new RepositoryException(&quot;Comment not found: &quot; + id.getValue());</span>
+            }
+
+<span class="fc" id="L118">            Files.deleteIfExists(commentFile);</span>
+<span class="nc" id="L119">        } catch (IOException e) {</span>
+<span class="nc" id="L120">            throw new RepositoryException(&quot;Failed to delete comment: &quot; + id.getValue(), e);</span>
+<span class="fc" id="L121">        }</span>
+<span class="fc" id="L122">    }</span>
+
+    /**
+     * Finds the file path for a comment by searching all story directories.
+     */
+    private Path findCommentFilePath(CommentId commentId) throws IOException {
+<span class="fc" id="L128">        String fileName = commentId.getValue();</span>
+
+        // Search in all prioritization directories
+<span class="fc bfc" id="L131" title="All 2 branches covered.">        for (String prioritization : new String[]{&quot;backlog&quot;, &quot;prioritized&quot;, &quot;deprioritized&quot;}) {</span>
+<span class="fc" id="L132">            Path prioritizationDir = workspaceRoot.resolve(prioritization);</span>
+
+<span class="fc bfc" id="L134" title="All 2 branches covered.">            if (Files.exists(prioritizationDir)) {</span>
+<span class="fc" id="L135">                try (Stream&lt;Path&gt; storyDirs = Files.list(prioritizationDir)) {</span>
+<span class="fc" id="L136">                    Optional&lt;Path&gt; commentFile = storyDirs</span>
+<span class="fc" id="L137">                        .filter(Files::isDirectory)</span>
+<span class="fc" id="L138">                        .map(storyDir -&gt; storyDir.resolve(&quot;comments&quot;).resolve(fileName))</span>
+<span class="fc" id="L139">                        .filter(Files::exists)</span>
+<span class="fc" id="L140">                        .findFirst();</span>
+
+<span class="fc bfc" id="L142" title="All 2 branches covered.">                    if (commentFile.isPresent()) {</span>
+<span class="fc" id="L143">                        return commentFile.get();</span>
+                    }
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">                }</span>
+            }
+        }
+
+<span class="fc" id="L149">        return null;</span>
+    }
+
+    /**
+     * Finds the comments directory for a story.
+     */
+    private Path findStoryCommentsDirectory(StoryId storyId) throws IOException {
+        // Search in all prioritization directories
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        for (String prioritization : new String[]{&quot;backlog&quot;, &quot;prioritized&quot;, &quot;deprioritized&quot;}) {</span>
+<span class="fc" id="L158">            Path storyDir = workspaceRoot.resolve(prioritization).resolve(storyId.getValue());</span>
+
+<span class="fc bfc" id="L160" title="All 2 branches covered.">            if (Files.exists(storyDir)) {</span>
+<span class="fc" id="L161">                Path commentsDir = storyDir.resolve(&quot;comments&quot;);</span>
+<span class="fc" id="L162">                Files.createDirectories(commentsDir);</span>
+<span class="fc" id="L163">                return commentsDir;</span>
+            }
+        }
+
+<span class="nc" id="L167">        throw new RepositoryException(&quot;Story directory not found for: &quot; + storyId.getValue());</span>
+    }
+
+    /**
+     * Exception thrown when repository operations fail.
+     */
+    public static class RepositoryException extends RuntimeException {
+        public RepositoryException(String message) {
+<span class="fc" id="L175">            super(message);</span>
+<span class="fc" id="L176">        }</span>
+
+        public RepositoryException(String message, Throwable cause) {
+<span class="nc" id="L179">            super(message, cause);</span>
+<span class="nc" id="L180">        }</span>
+    }
+
+    /**
+     * Utility class for formatting comments as markdown with frontmatter.
+     */
+    private static class CommentMarkdownFormatter {
+
+        /**
+         * Formats a comment as markdown with YAML frontmatter.
+         */
+        public static String format(Comment comment) {
+<span class="fc" id="L192">            StringBuilder sb = new StringBuilder();</span>
+
+            // YAML frontmatter
+<span class="fc" id="L195">            sb.append(&quot;---\n&quot;);</span>
+<span class="fc" id="L196">            sb.append(&quot;type: &quot;).append(comment.getType().name()).append(&quot;\n&quot;);</span>
+<span class="fc" id="L197">            sb.append(&quot;author: &quot;).append(comment.getAuthor()).append(&quot;\n&quot;);</span>
+<span class="fc" id="L198">            sb.append(&quot;createdAt: &quot;).append(comment.getCreatedAt().toString()).append(&quot;\n&quot;);</span>
+<span class="fc" id="L199">            sb.append(&quot;updatedAt: &quot;).append(comment.getUpdatedAt().toString()).append(&quot;\n&quot;);</span>
+<span class="fc" id="L200">            sb.append(&quot;resolved: &quot;).append(comment.isResolved()).append(&quot;\n&quot;);</span>
+
+<span class="fc bfc" id="L202" title="All 2 branches covered.">            if (comment.getResolvedBy() != null) {</span>
+<span class="fc" id="L203">                sb.append(&quot;resolvedBy: &quot;).append(comment.getResolvedBy()).append(&quot;\n&quot;);</span>
+<span class="fc" id="L204">                sb.append(&quot;resolvedAt: &quot;).append(comment.getResolvedAt().toString()).append(&quot;\n&quot;);</span>
+            }
+
+<span class="fc" id="L207">            sb.append(&quot;---\n\n&quot;);</span>
+
+            // Content
+<span class="fc" id="L210">            sb.append(comment.getContent());</span>
+
+<span class="fc" id="L212">            return sb.toString();</span>
+        }
+
+        /**
+         * Parses markdown with frontmatter back into a Comment.
+         */
+        public static Comment parse(CommentId commentId, String content) {
+            // Split frontmatter and content
+<span class="fc" id="L220">            String[] parts = content.split(&quot;---\n&quot;, 3);</span>
+
+<span class="pc bpc" id="L222" title="1 of 2 branches missed.">            if (parts.length &lt; 3) {</span>
+<span class="nc" id="L223">                throw new IllegalArgumentException(&quot;Invalid comment format: missing frontmatter&quot;);</span>
+            }
+
+<span class="fc" id="L226">            String frontmatter = parts[1];</span>
+<span class="fc" id="L227">            String commentContent = parts[2].trim();</span>
+
+            // Parse frontmatter
+<span class="fc" id="L230">            String[] lines = frontmatter.split(&quot;\n&quot;);</span>
+<span class="fc" id="L231">            String type = null;</span>
+<span class="fc" id="L232">            String author = null;</span>
+<span class="fc" id="L233">            boolean resolved = false;</span>
+<span class="fc" id="L234">            String resolvedBy = null;</span>
+
+<span class="fc bfc" id="L236" title="All 2 branches covered.">            for (String line : lines) {</span>
+<span class="fc" id="L237">                String[] kv = line.split(&quot;: &quot;, 2);</span>
+<span class="pc bpc" id="L238" title="1 of 2 branches missed.">                if (kv.length == 2) {</span>
+<span class="fc" id="L239">                    String key = kv[0].trim();</span>
+<span class="fc" id="L240">                    String value = kv[1].trim();</span>
+
+<span class="fc bfc" id="L242" title="All 5 branches covered.">                    switch (key) {</span>
+                        case &quot;type&quot;:
+<span class="fc" id="L244">                            type = value;</span>
+<span class="fc" id="L245">                            break;</span>
+                        case &quot;author&quot;:
+<span class="fc" id="L247">                            author = value;</span>
+<span class="fc" id="L248">                            break;</span>
+                        case &quot;resolved&quot;:
+<span class="fc" id="L250">                            resolved = Boolean.parseBoolean(value);</span>
+<span class="fc" id="L251">                            break;</span>
+                        case &quot;resolvedBy&quot;:
+<span class="fc" id="L253">                            resolvedBy = value;</span>
+                            break;
+                    }
+                }
+            }
+
+            // Extract storyId from commentId (it's embedded in the path)
+            // This is a simplification - in real implementation, we'd get it from the file path
+<span class="fc" id="L261">            String storyIdValue = &quot;STORY-001&quot;; // TODO: Extract from path</span>
+
+<span class="fc" id="L263">            StoryId storyId = new StoryId(storyIdValue);</span>
+<span class="fc" id="L264">            Comment comment = new Comment(</span>
+                commentId,
+                storyId,
+                author,
+                commentContent,
+<span class="fc" id="L269">                CommentType.valueOf(type)</span>
+            );
+
+            // Set resolved state if applicable
+<span class="pc bpc" id="L273" title="1 of 4 branches missed.">            if (resolved &amp;&amp; resolvedBy != null) {</span>
+<span class="fc" id="L274">                comment.resolve(resolvedBy);</span>
+            }
+
+<span class="fc" id="L277">            return comment;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

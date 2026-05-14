@@ -1,0 +1,2 @@
+Draft a short plan for a simple inventory system with crafting recipes and list a few example items.
+

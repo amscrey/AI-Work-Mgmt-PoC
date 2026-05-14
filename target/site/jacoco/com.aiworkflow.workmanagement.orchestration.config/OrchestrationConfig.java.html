@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OrchestrationConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.orchestration.config</a> &gt; <span class="el_source">OrchestrationConfig.java</span></div><h1>OrchestrationConfig.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.orchestration.config;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Configuration for the orchestration layer.
+ * &lt;p&gt;
+ * This configuration supports two execution modes:
+ * &lt;ul&gt;
+ *   &lt;li&gt;&lt;strong&gt;template&lt;/strong&gt;: Template-based nodes (deterministic, no LLM calls)&lt;/li&gt;
+ *   &lt;li&gt;&lt;strong&gt;llm&lt;/strong&gt;: LLM nodes (real Claude API calls via LangChain4j)&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;p&gt;
+ * Both modes use the same {@code NodeAction} interface and are completely interchangeable.
+ * The mode determines which implementation beans are loaded via conditional configuration.
+ *
+ * &lt;h2&gt;Configuration Example (application.yml)&lt;/h2&gt;
+ * &lt;pre&gt;
+ * orchestration:
+ *   execution-mode: template  # or &quot;llm&quot;
+ *
+ *   template:
+ *     simulate-delay: true
+ *     delay-ms: 1000
+ *
+ *   context:
+ *     max-reference-files: 5
+ *     max-artifacts: 10
+ *     max-context-chars: 50000
+ * &lt;/pre&gt;
+ *
+ * &lt;h2&gt;Validation&lt;/h2&gt;
+ * The execution-mode must be either &quot;template&quot; or &quot;llm&quot;. Invalid values will cause
+ * application startup to fail with a descriptive error message.
+ *
+ * &lt;h2&gt;Usage&lt;/h2&gt;
+ * &lt;pre&gt;{@code
+ * @Autowired
+ * private OrchestrationConfig config;
+ *
+ * if (config.isTemplateMode()) {
+ *     // Use template-based execution
+ * } else {
+ *     // Use LLM-based execution
+ * }
+ * }&lt;/pre&gt;
+ *
+ * @see org.springframework.boot.context.properties.ConfigurationProperties
+ */
+@Configuration
+@ConfigurationProperties(prefix = &quot;orchestration&quot;)
+<span class="fc" id="L55">public class OrchestrationConfig {</span>
+
+<span class="fc" id="L57">    private static final Logger logger = LoggerFactory.getLogger(OrchestrationConfig.class);</span>
+
+    /**
+     * Execution mode: &quot;template&quot; or &quot;llm&quot;.
+     * &lt;p&gt;
+     * Default is &quot;template&quot; to enable testing without LLM API costs.
+     */
+<span class="fc" id="L64">    private String executionMode = &quot;template&quot;;</span>
+
+    /**
+     * Template mode configuration.
+     */
+<span class="fc" id="L69">    private TemplateConfig template = new TemplateConfig();</span>
+
+    /**
+     * Context assembly configuration.
+     */
+<span class="fc" id="L74">    private ContextConfig context = new ContextConfig();</span>
+
+    /**
+     * Gets the execution mode.
+     *
+     * @return &quot;template&quot; or &quot;llm&quot;
+     */
+    public String getExecutionMode() {
+<span class="fc" id="L82">        return executionMode;</span>
+    }
+
+    /**
+     * Sets the execution mode.
+     * &lt;p&gt;
+     * Must be either &quot;template&quot; or &quot;llm&quot;. Invalid values will be rejected during validation.
+     *
+     * @param executionMode the execution mode
+     */
+    public void setExecutionMode(String executionMode) {
+<span class="fc" id="L93">        this.executionMode = executionMode;</span>
+<span class="fc" id="L94">    }</span>
+
+    /**
+     * Checks if template mode is active.
+     *
+     * @return true if execution-mode is &quot;template&quot;
+     */
+    public boolean isTemplateMode() {
+<span class="fc" id="L102">        return &quot;template&quot;.equalsIgnoreCase(executionMode);</span>
+    }
+
+    /**
+     * Checks if LLM mode is active.
+     *
+     * @return true if execution-mode is &quot;llm&quot;
+     */
+    public boolean isLlmMode() {
+<span class="fc" id="L111">        return &quot;llm&quot;.equalsIgnoreCase(executionMode);</span>
+    }
+
+    /**
+     * Gets template mode configuration.
+     *
+     * @return template configuration
+     */
+    public TemplateConfig getTemplate() {
+<span class="fc" id="L120">        return template;</span>
+    }
+
+    /**
+     * Sets template mode configuration.
+     *
+     * @param template template configuration
+     */
+    public void setTemplate(TemplateConfig template) {
+<span class="fc" id="L129">        this.template = template;</span>
+<span class="fc" id="L130">    }</span>
+
+    /**
+     * Gets context assembly configuration.
+     *
+     * @return context configuration
+     */
+    public ContextConfig getContext() {
+<span class="fc" id="L138">        return context;</span>
+    }
+
+    /**
+     * Sets context assembly configuration.
+     *
+     * @param context context configuration
+     */
+    public void setContext(ContextConfig context) {
+<span class="fc" id="L147">        this.context = context;</span>
+<span class="fc" id="L148">    }</span>
+
+    /**
+     * Validates the configuration.
+     * &lt;p&gt;
+     * This method is called during application startup to ensure valid configuration.
+     *
+     * @throws IllegalArgumentException if configuration is invalid
+     */
+    public void validate() {
+<span class="fc bfc" id="L158" title="All 4 branches covered.">        if (executionMode == null || executionMode.trim().isEmpty()) {</span>
+<span class="fc" id="L159">            throw new IllegalArgumentException(&quot;orchestration.execution-mode must be set&quot;);</span>
+        }
+
+<span class="fc" id="L162">        String normalizedMode = executionMode.trim().toLowerCase();</span>
+<span class="fc bfc" id="L163" title="All 4 branches covered.">        if (!normalizedMode.equals(&quot;template&quot;) &amp;&amp; !normalizedMode.equals(&quot;llm&quot;)) {</span>
+<span class="fc" id="L164">            throw new IllegalArgumentException(</span>
+                &quot;orchestration.execution-mode must be 'template' or 'llm', got: &quot; + executionMode
+            );
+        }
+
+        // Normalize mode for case-insensitive matching
+<span class="fc" id="L170">        this.executionMode = normalizedMode;</span>
+
+<span class="fc" id="L172">        logger.info(&quot;Orchestration execution mode resolved: {}&quot;, this.executionMode);</span>
+
+        // Validate nested configs
+<span class="pc bpc" id="L175" title="1 of 2 branches missed.">        if (template != null) {</span>
+<span class="fc" id="L176">            template.validate();</span>
+        }
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">        if (context != null) {</span>
+<span class="fc" id="L179">            context.validate();</span>
+        }
+<span class="fc" id="L181">    }</span>
+
+    /**
+     * Template mode configuration.
+     */
+<span class="fc" id="L186">    public static class TemplateConfig {</span>
+
+        /**
+         * Whether to simulate execution delay (for realistic testing).
+         * Default: true
+         */
+<span class="fc" id="L192">        private boolean simulateDelay = true;</span>
+
+        /**
+         * Simulated delay in milliseconds.
+         * Default: 1000ms (1 second)
+         */
+<span class="fc" id="L198">        private long delayMs = 1000;</span>
+
+        public boolean isSimulateDelay() {
+<span class="fc" id="L201">            return simulateDelay;</span>
+        }
+
+        public void setSimulateDelay(boolean simulateDelay) {
+<span class="fc" id="L205">            this.simulateDelay = simulateDelay;</span>
+<span class="fc" id="L206">        }</span>
+
+        public long getDelayMs() {
+<span class="fc" id="L209">            return delayMs;</span>
+        }
+
+        public void setDelayMs(long delayMs) {
+<span class="fc" id="L213">            this.delayMs = delayMs;</span>
+<span class="fc" id="L214">        }</span>
+
+        public void validate() {
+<span class="fc bfc" id="L217" title="All 2 branches covered.">            if (delayMs &lt; 0) {</span>
+<span class="fc" id="L218">                throw new IllegalArgumentException(</span>
+                    &quot;orchestration.template.delay-ms must be non-negative, got: &quot; + delayMs
+                );
+            }
+<span class="fc" id="L222">        }</span>
+    }
+
+    /**
+     * Context assembly configuration.
+     */
+<span class="fc" id="L228">    public static class ContextConfig {</span>
+
+        /**
+         * Maximum number of reference files to include in context.
+         * Default: 5
+         */
+<span class="fc" id="L234">        private int maxReferenceFiles = 5;</span>
+
+        /**
+         * Maximum number of artifacts to include in context.
+         * Default: 10
+         */
+<span class="fc" id="L240">        private int maxArtifacts = 10;</span>
+
+        /**
+         * Maximum total context size in characters.
+         * Default: 50,000 characters
+         */
+<span class="fc" id="L246">        private long maxContextChars = 50_000;</span>
+
+        public int getMaxReferenceFiles() {
+<span class="fc" id="L249">            return maxReferenceFiles;</span>
+        }
+
+        public void setMaxReferenceFiles(int maxReferenceFiles) {
+<span class="fc" id="L253">            this.maxReferenceFiles = maxReferenceFiles;</span>
+<span class="fc" id="L254">        }</span>
+
+        public int getMaxArtifacts() {
+<span class="fc" id="L257">            return maxArtifacts;</span>
+        }
+
+        public void setMaxArtifacts(int maxArtifacts) {
+<span class="fc" id="L261">            this.maxArtifacts = maxArtifacts;</span>
+<span class="fc" id="L262">        }</span>
+
+        public long getMaxContextChars() {
+<span class="fc" id="L265">            return maxContextChars;</span>
+        }
+
+        public void setMaxContextChars(long maxContextChars) {
+<span class="fc" id="L269">            this.maxContextChars = maxContextChars;</span>
+<span class="fc" id="L270">        }</span>
+
+        public void validate() {
+<span class="fc bfc" id="L273" title="All 2 branches covered.">            if (maxReferenceFiles &lt; 0) {</span>
+<span class="fc" id="L274">                throw new IllegalArgumentException(</span>
+                    &quot;orchestration.context.max-reference-files must be non-negative, got: &quot; + maxReferenceFiles
+                );
+            }
+<span class="fc bfc" id="L278" title="All 2 branches covered.">            if (maxArtifacts &lt; 0) {</span>
+<span class="fc" id="L279">                throw new IllegalArgumentException(</span>
+                    &quot;orchestration.context.max-artifacts must be non-negative, got: &quot; + maxArtifacts
+                );
+            }
+<span class="fc bfc" id="L283" title="All 2 branches covered.">            if (maxContextChars &lt; 1) {</span>
+<span class="fc" id="L284">                throw new IllegalArgumentException(</span>
+                    &quot;orchestration.context.max-context-chars must be positive, got: &quot; + maxContextChars
+                );
+            }
+<span class="fc" id="L288">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

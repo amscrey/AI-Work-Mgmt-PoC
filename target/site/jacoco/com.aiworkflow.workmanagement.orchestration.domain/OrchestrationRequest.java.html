@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OrchestrationRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.orchestration.domain</a> &gt; <span class="el_source">OrchestrationRequest.java</span></div><h1>OrchestrationRequest.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.orchestration.domain;
+
+import com.aiworkflow.workmanagement.domain.valueobject.StoryId;
+
+import java.util.Objects;
+
+/**
+ * Value object representing a request to execute orchestration.
+ * &lt;p&gt;
+ * Orchestration can be requested for:
+ * - A specific story (storyId provided)
+ * - Project-level work (storyId is null, routes to PROJECT-PLANNING meta work item)
+ * &lt;p&gt;
+ * The workIntent is a free-form string describing what work should be done,
+ * allowing flexible orchestration without predefined operation types.
+ */
+public class OrchestrationRequest {
+    private final StoryId storyId;
+    private final String workIntent;
+    private final String requestedBy;
+
+    /**
+     * Private constructor - use builder() instead.
+     */
+<span class="fc" id="L25">    private OrchestrationRequest(StoryId storyId, String workIntent, String requestedBy) {</span>
+<span class="fc bfc" id="L26" title="All 4 branches covered.">        if (workIntent == null || workIntent.isBlank()) {</span>
+<span class="fc" id="L27">            throw new IllegalArgumentException(&quot;Work intent cannot be null or blank&quot;);</span>
+        }
+<span class="fc bfc" id="L29" title="All 4 branches covered.">        if (requestedBy == null || requestedBy.isBlank()) {</span>
+<span class="fc" id="L30">            throw new IllegalArgumentException(&quot;RequestedBy cannot be null or blank&quot;);</span>
+        }
+
+<span class="fc" id="L33">        this.storyId = storyId; // Can be null for PROJECT-PLANNING</span>
+<span class="fc" id="L34">        this.workIntent = workIntent;</span>
+<span class="fc" id="L35">        this.requestedBy = requestedBy;</span>
+<span class="fc" id="L36">    }</span>
+
+    /**
+     * Creates a builder for OrchestrationRequest.
+     *
+     * @return a new Builder instance
+     */
+    public static Builder builder() {
+<span class="fc" id="L44">        return new Builder();</span>
+    }
+
+    /**
+     * Creates a story-specific orchestration request.
+     *
+     * @param storyId the story to perform orchestration on
+     * @param workIntent description of what work to perform
+     * @param requestedBy who requested this orchestration
+     * @return a new OrchestrationRequest
+     */
+    public static OrchestrationRequest forStory(StoryId storyId, String workIntent, String requestedBy) {
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        if (storyId == null) {</span>
+<span class="fc" id="L57">            throw new IllegalArgumentException(&quot;StoryId cannot be null for story-specific request. Use forProject() instead.&quot;);</span>
+        }
+<span class="fc" id="L59">        return new Builder()</span>
+<span class="fc" id="L60">            .storyId(storyId)</span>
+<span class="fc" id="L61">            .workIntent(workIntent)</span>
+<span class="fc" id="L62">            .requestedBy(requestedBy)</span>
+<span class="fc" id="L63">            .build();</span>
+    }
+
+    /**
+     * Creates a project-level orchestration request (routes to PROJECT-PLANNING).
+     *
+     * @param workIntent description of what work to perform
+     * @param requestedBy who requested this orchestration
+     * @return a new OrchestrationRequest with null storyId
+     */
+    public static OrchestrationRequest forProject(String workIntent, String requestedBy) {
+<span class="fc" id="L74">        return new Builder()</span>
+<span class="fc" id="L75">            .storyId(null) // Explicitly null for PROJECT-PLANNING</span>
+<span class="fc" id="L76">            .workIntent(workIntent)</span>
+<span class="fc" id="L77">            .requestedBy(requestedBy)</span>
+<span class="fc" id="L78">            .build();</span>
+    }
+
+    public StoryId getStoryId() {
+<span class="fc" id="L82">        return storyId;</span>
+    }
+
+    public String getWorkIntent() {
+<span class="fc" id="L86">        return workIntent;</span>
+    }
+
+    public String getRequestedBy() {
+<span class="fc" id="L90">        return requestedBy;</span>
+    }
+
+    /**
+     * Checks if this is a project-level request (routes to PROJECT-PLANNING).
+     *
+     * @return true if storyId is null
+     */
+    public boolean isProjectLevel() {
+<span class="fc bfc" id="L99" title="All 2 branches covered.">        return storyId == null;</span>
+    }
+
+    /**
+     * Checks if this is a story-specific request.
+     *
+     * @return true if storyId is not null
+     */
+    public boolean isStorySpecific() {
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        return storyId != null;</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">        if (this == o) return true;</span>
+<span class="pc bpc" id="L114" title="2 of 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="fc" id="L115">        OrchestrationRequest that = (OrchestrationRequest) o;</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        return Objects.equals(storyId, that.storyId) &amp;&amp;</span>
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">               Objects.equals(workIntent, that.workIntent) &amp;&amp;</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">               Objects.equals(requestedBy, that.requestedBy);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L123">        return Objects.hash(storyId, workIntent, requestedBy);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L128">        return &quot;OrchestrationRequest{&quot; +</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">            &quot;storyId=&quot; + (storyId != null ? storyId : &quot;PROJECT-PLANNING&quot;) +</span>
+            &quot;, workIntent='&quot; + workIntent + '\'' +
+            &quot;, requestedBy='&quot; + requestedBy + '\'' +
+            '}';
+    }
+
+    /**
+     * Builder class for OrchestrationRequest.
+     */
+    public static class Builder {
+        private StoryId storyId;
+        private String workIntent;
+        private String requestedBy;
+
+        private Builder() {}
+
+        /**
+         * Sets the story ID. Can be null for project-level requests.
+         *
+         * @param storyId the story ID, or null for PROJECT-PLANNING
+         * @return this builder
+         */
+        public Builder storyId(StoryId storyId) {
+<span class="fc" id="L152">            this.storyId = storyId;</span>
+<span class="fc" id="L153">            return this;</span>
+        }
+
+        /**
+         * Sets the work intent (required).
+         *
+         * @param workIntent description of what work to perform
+         * @return this builder
+         */
+        public Builder workIntent(String workIntent) {
+<span class="fc" id="L163">            this.workIntent = workIntent;</span>
+<span class="fc" id="L164">            return this;</span>
+        }
+
+        /**
+         * Sets who requested this orchestration (required).
+         *
+         * @param requestedBy the requester (user, agent, system)
+         * @return this builder
+         */
+        public Builder requestedBy(String requestedBy) {
+<span class="fc" id="L174">            this.requestedBy = requestedBy;</span>
+<span class="fc" id="L175">            return this;</span>
+        }
+
+        /**
+         * Builds the OrchestrationRequest.
+         *
+         * @return a new OrchestrationRequest instance
+         * @throws IllegalArgumentException if required fields are missing
+         */
+        public OrchestrationRequest build() {
+<span class="fc" id="L185">            return new OrchestrationRequest(storyId, workIntent, requestedBy);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

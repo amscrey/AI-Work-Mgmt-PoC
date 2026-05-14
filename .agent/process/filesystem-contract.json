@@ -1,0 +1,17 @@
+{
+  "canonicalDirectories": {
+    "backlog": {"prioritizationState": "BACKLOG"},
+    "prioritized": {"prioritizationState": "PRIORITIZED"},
+    "done": {"workflowState": "DONE"}
+  },
+  "rules": [
+    "directory_and_json_must_match",
+    "move_directory_immediately_after_json_update",
+    "validate_dependencies_before_prioritization",
+    "do_not_mark_done_without_evidence"
+  ],
+  "validationCommands": {
+    "checkBacklog": "test -d backlog/STORY-XXX && grep -q '\"prioritizationState\"\\s*:\\s*\"BACKLOG\"' backlog/STORY-XXX/story.json",
+    "moveStory": "mv backlog/STORY-XXX prioritized/STORY-XXX"
+  }
+}

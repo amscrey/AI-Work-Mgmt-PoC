@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OrchestrationResult.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.orchestration.domain</a> &gt; <span class="el_source">OrchestrationResult.java</span></div><h1>OrchestrationResult.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.orchestration.domain;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+
+/**
+ * Value object representing the outcome of an orchestration execution.
+ * &lt;p&gt;
+ * This is a domain object (decoupled from langgraph4j). OrchestrationService
+ * extracts artifacts from the final OrchestrationState and builds this result
+ * before passing it to ArtifactOutputService.
+ * &lt;p&gt;
+ * Contains the execution outcome, artifacts produced, and any errors or metadata.
+ */
+public class OrchestrationResult {
+    private final String executionId;
+    private final ExecutionOutcome outcome;
+    private final List&lt;ArtifactReference&gt; artifacts;
+    private final String executionSummary;
+    private final List&lt;String&gt; errors;
+    private final Instant startedAt;
+    private final Instant completedAt;
+
+    /**
+     * Private constructor - use builder() or factory methods instead.
+     */
+    private OrchestrationResult(
+        String executionId,
+        ExecutionOutcome outcome,
+        List&lt;ArtifactReference&gt; artifacts,
+        String executionSummary,
+        List&lt;String&gt; errors,
+        Instant startedAt,
+        Instant completedAt
+<span class="fc" id="L39">    ) {</span>
+<span class="fc bfc" id="L40" title="All 4 branches covered.">        if (executionId == null || executionId.isBlank()) {</span>
+<span class="fc" id="L41">            throw new IllegalArgumentException(&quot;ExecutionId cannot be null or blank&quot;);</span>
+        }
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        if (outcome == null) {</span>
+<span class="fc" id="L44">            throw new IllegalArgumentException(&quot;ExecutionOutcome cannot be null&quot;);</span>
+        }
+
+<span class="fc" id="L47">        this.executionId = executionId;</span>
+<span class="fc" id="L48">        this.outcome = outcome;</span>
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">        this.artifacts = new ArrayList&lt;&gt;(artifacts != null ? artifacts : Collections.emptyList());</span>
+<span class="fc" id="L50">        this.executionSummary = executionSummary;</span>
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        this.errors = new ArrayList&lt;&gt;(errors != null ? errors : Collections.emptyList());</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        this.startedAt = startedAt != null ? startedAt : Instant.now();</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        this.completedAt = completedAt != null ? completedAt : Instant.now();</span>
+<span class="fc" id="L54">    }</span>
+
+    /**
+     * Creates a builder for OrchestrationResult.
+     *
+     * @return a new Builder instance
+     */
+    public static Builder builder() {
+<span class="fc" id="L62">        return new Builder();</span>
+    }
+
+    /**
+     * Factory method for a successful execution with artifacts.
+     *
+     * @param executionId unique ID for this execution
+     * @param artifacts artifacts produced during execution
+     * @param summary execution summary
+     * @return a new OrchestrationResult with SUCCESS outcome
+     */
+    public static OrchestrationResult success(
+        String executionId,
+        List&lt;ArtifactReference&gt; artifacts,
+        String summary
+    ) {
+<span class="fc" id="L78">        return builder()</span>
+<span class="fc" id="L79">            .executionId(executionId)</span>
+<span class="fc" id="L80">            .outcome(ExecutionOutcome.SUCCESS)</span>
+<span class="fc" id="L81">            .artifacts(artifacts)</span>
+<span class="fc" id="L82">            .executionSummary(summary)</span>
+<span class="fc" id="L83">            .build();</span>
+    }
+
+    /**
+     * Factory method for a failed execution.
+     *
+     * @param executionId unique ID for this execution
+     * @param errorMessage error description
+     * @return a new OrchestrationResult with FAILURE outcome
+     */
+    public static OrchestrationResult failure(String executionId, String errorMessage) {
+<span class="fc" id="L94">        return builder()</span>
+<span class="fc" id="L95">            .executionId(executionId)</span>
+<span class="fc" id="L96">            .outcome(ExecutionOutcome.FAILURE)</span>
+<span class="fc" id="L97">            .executionSummary(&quot;Execution failed&quot;)</span>
+<span class="fc" id="L98">            .addError(errorMessage)</span>
+<span class="fc" id="L99">            .build();</span>
+    }
+
+    /**
+     * Factory method for a partial execution with some artifacts.
+     *
+     * @param executionId unique ID for this execution
+     * @param artifacts artifacts that were successfully produced
+     * @param errors list of errors encountered
+     * @return a new OrchestrationResult with PARTIAL outcome
+     */
+    public static OrchestrationResult partial(
+        String executionId,
+        List&lt;ArtifactReference&gt; artifacts,
+        List&lt;String&gt; errors
+    ) {
+<span class="fc" id="L115">        return builder()</span>
+<span class="fc" id="L116">            .executionId(executionId)</span>
+<span class="fc" id="L117">            .outcome(ExecutionOutcome.PARTIAL)</span>
+<span class="fc" id="L118">            .artifacts(artifacts)</span>
+<span class="fc" id="L119">            .errors(errors)</span>
+<span class="fc" id="L120">            .executionSummary(&quot;Execution partially completed with &quot; + artifacts.size() + &quot; artifacts&quot;)</span>
+<span class="fc" id="L121">            .build();</span>
+    }
+
+    public String getExecutionId() {
+<span class="fc" id="L125">        return executionId;</span>
+    }
+
+    public ExecutionOutcome getOutcome() {
+<span class="fc" id="L129">        return outcome;</span>
+    }
+
+    /**
+     * Returns an unmodifiable list of artifacts.
+     *
+     * @return the artifacts produced
+     */
+    public List&lt;ArtifactReference&gt; getArtifacts() {
+<span class="fc" id="L138">        return Collections.unmodifiableList(artifacts);</span>
+    }
+
+    public String getExecutionSummary() {
+<span class="fc" id="L142">        return executionSummary;</span>
+    }
+
+    /**
+     * Returns an unmodifiable list of errors.
+     *
+     * @return the errors encountered
+     */
+    public List&lt;String&gt; getErrors() {
+<span class="fc" id="L151">        return Collections.unmodifiableList(errors);</span>
+    }
+
+    public Instant getStartedAt() {
+<span class="fc" id="L155">        return startedAt;</span>
+    }
+
+    public Instant getCompletedAt() {
+<span class="fc" id="L159">        return completedAt;</span>
+    }
+
+    /**
+     * Returns the execution duration.
+     *
+     * @return duration between start and completion
+     */
+    public Duration getDuration() {
+<span class="fc" id="L168">        return Duration.between(startedAt, completedAt);</span>
+    }
+
+    /**
+     * Checks if the execution was successful.
+     *
+     * @return true if outcome is SUCCESS
+     */
+    public boolean isSuccess() {
+<span class="fc bfc" id="L177" title="All 2 branches covered.">        return outcome == ExecutionOutcome.SUCCESS;</span>
+    }
+
+    /**
+     * Checks if the execution failed.
+     *
+     * @return true if outcome is FAILURE
+     */
+    public boolean isFailure() {
+<span class="fc bfc" id="L186" title="All 2 branches covered.">        return outcome == ExecutionOutcome.FAILURE;</span>
+    }
+
+    /**
+     * Checks if any artifacts were produced.
+     *
+     * @return true if artifacts list is not empty
+     */
+    public boolean hasArtifacts() {
+<span class="fc bfc" id="L195" title="All 2 branches covered.">        return !artifacts.isEmpty();</span>
+    }
+
+    /**
+     * Checks if any errors occurred.
+     *
+     * @return true if errors list is not empty
+     */
+    public boolean hasErrors() {
+<span class="fc bfc" id="L204" title="All 2 branches covered.">        return !errors.isEmpty();</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">        if (this == o) return true;</span>
+<span class="pc bpc" id="L210" title="2 of 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="fc" id="L211">        OrchestrationResult that = (OrchestrationResult) o;</span>
+<span class="fc" id="L212">        return Objects.equals(executionId, that.executionId);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L217">        return Objects.hash(executionId);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L222">        return &quot;OrchestrationResult{&quot; +</span>
+            &quot;executionId='&quot; + executionId + '\'' +
+            &quot;, outcome=&quot; + outcome +
+<span class="fc" id="L225">            &quot;, artifacts=&quot; + artifacts.size() +</span>
+<span class="fc" id="L226">            &quot;, errors=&quot; + errors.size() +</span>
+<span class="fc" id="L227">            &quot;, duration=&quot; + getDuration().toMillis() + &quot;ms&quot; +</span>
+            '}';
+    }
+
+    /**
+     * Builder class for OrchestrationResult.
+     */
+    public static class Builder {
+        private String executionId;
+        private ExecutionOutcome outcome;
+        private List&lt;ArtifactReference&gt; artifacts;
+        private String executionSummary;
+        private List&lt;String&gt; errors;
+        private Instant startedAt;
+        private Instant completedAt;
+
+<span class="fc" id="L243">        private Builder() {</span>
+<span class="fc" id="L244">            this.artifacts = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L245">            this.errors = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L246">        }</span>
+
+        public Builder executionId(String executionId) {
+<span class="fc" id="L249">            this.executionId = executionId;</span>
+<span class="fc" id="L250">            return this;</span>
+        }
+
+        public Builder outcome(ExecutionOutcome outcome) {
+<span class="fc" id="L254">            this.outcome = outcome;</span>
+<span class="fc" id="L255">            return this;</span>
+        }
+
+        public Builder artifacts(List&lt;ArtifactReference&gt; artifacts) {
+<span class="fc bfc" id="L259" title="All 2 branches covered.">            this.artifacts = new ArrayList&lt;&gt;(artifacts != null ? artifacts : Collections.emptyList());</span>
+<span class="fc" id="L260">            return this;</span>
+        }
+
+        public Builder addArtifact(ArtifactReference artifact) {
+<span class="fc bfc" id="L264" title="All 2 branches covered.">            if (artifact != null) {</span>
+<span class="fc" id="L265">                this.artifacts.add(artifact);</span>
+            }
+<span class="fc" id="L267">            return this;</span>
+        }
+
+        public Builder executionSummary(String executionSummary) {
+<span class="fc" id="L271">            this.executionSummary = executionSummary;</span>
+<span class="fc" id="L272">            return this;</span>
+        }
+
+        public Builder errors(List&lt;String&gt; errors) {
+<span class="fc bfc" id="L276" title="All 2 branches covered.">            this.errors = new ArrayList&lt;&gt;(errors != null ? errors : Collections.emptyList());</span>
+<span class="fc" id="L277">            return this;</span>
+        }
+
+        public Builder addError(String error) {
+<span class="fc bfc" id="L281" title="All 4 branches covered.">            if (error != null &amp;&amp; !error.isBlank()) {</span>
+<span class="fc" id="L282">                this.errors.add(error);</span>
+            }
+<span class="fc" id="L284">            return this;</span>
+        }
+
+        public Builder startedAt(Instant startedAt) {
+<span class="fc" id="L288">            this.startedAt = startedAt;</span>
+<span class="fc" id="L289">            return this;</span>
+        }
+
+        public Builder completedAt(Instant completedAt) {
+<span class="fc" id="L293">            this.completedAt = completedAt;</span>
+<span class="fc" id="L294">            return this;</span>
+        }
+
+        public OrchestrationResult build() {
+<span class="fc" id="L298">            return new OrchestrationResult(</span>
+                executionId,
+                outcome,
+                artifacts,
+                executionSummary,
+                errors,
+                startedAt,
+                completedAt
+            );
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

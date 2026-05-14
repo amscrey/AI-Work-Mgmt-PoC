@@ -1,0 +1,13 @@
+{
+  "id" : "TASK-9001",
+  "storyId" : "STORY-9001",
+  "title" : "Verification Task",
+  "description" : "This task demonstrates task file creation",
+  "state" : "PENDING",
+  "assignedTo" : "agent",
+  "estimatedHours" : 5,
+  "createdAt" : "2026-04-10T19:04:54.641938Z",
+  "updatedAt" : "2026-04-10T19:04:54.641943Z",
+  "completedAt" : null,
+  "blockingReason" : null
+}

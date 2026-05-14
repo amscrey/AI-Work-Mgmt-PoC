@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OrchestrationContext.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.orchestration.domain</a> &gt; <span class="el_source">OrchestrationContext.java</span></div><h1>OrchestrationContext.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.orchestration.domain;
+
+import com.aiworkflow.workmanagement.domain.model.Story;
+import com.aiworkflow.workmanagement.domain.model.Task;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+
+/**
+ * Value object representing the execution context assembled for orchestration.
+ * &lt;p&gt;
+ * This is a domain object (decoupled from langgraph4j). OrchestrationService
+ * handles conversion to OrchestrationState when executing the StateGraph.
+ * &lt;p&gt;
+ * Contains all the information needed for an agent to perform work:
+ * - Story metadata (title, description, acceptance criteria)
+ * - Associated tasks
+ * - Reference files (from workspace/reference/ directory)
+ * - Work intent (what to do)
+ */
+public class OrchestrationContext {
+    private final Story story;
+    private final String workIntent;
+    private final List&lt;Task&gt; tasks;
+    private final List&lt;ReferenceFile&gt; referenceFiles;
+
+    /**
+     * Private constructor - use builder() instead.
+     */
+<span class="fc" id="L32">    private OrchestrationContext(Story story, String workIntent, List&lt;Task&gt; tasks, List&lt;ReferenceFile&gt; referenceFiles) {</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">        if (story == null) {</span>
+<span class="fc" id="L34">            throw new IllegalArgumentException(&quot;Story cannot be null&quot;);</span>
+        }
+<span class="fc bfc" id="L36" title="All 4 branches covered.">        if (workIntent == null || workIntent.isBlank()) {</span>
+<span class="fc" id="L37">            throw new IllegalArgumentException(&quot;Work intent cannot be null or blank&quot;);</span>
+        }
+
+<span class="fc" id="L40">        this.story = story;</span>
+<span class="fc" id="L41">        this.workIntent = workIntent;</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        this.tasks = new ArrayList&lt;&gt;(tasks != null ? tasks : Collections.emptyList());</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        this.referenceFiles = new ArrayList&lt;&gt;(referenceFiles != null ? referenceFiles : Collections.emptyList());</span>
+<span class="fc" id="L44">    }</span>
+
+    /**
+     * Creates a builder for OrchestrationContext.
+     *
+     * @return a new Builder instance
+     */
+    public static Builder builder() {
+<span class="fc" id="L52">        return new Builder();</span>
+    }
+
+    public Story getStory() {
+<span class="fc" id="L56">        return story;</span>
+    }
+
+    public String getWorkIntent() {
+<span class="fc" id="L60">        return workIntent;</span>
+    }
+
+    /**
+     * Returns an unmodifiable list of tasks.
+     *
+     * @return the tasks associated with this context
+     */
+    public List&lt;Task&gt; getTasks() {
+<span class="fc" id="L69">        return Collections.unmodifiableList(tasks);</span>
+    }
+
+    /**
+     * Returns an unmodifiable list of reference files.
+     *
+     * @return the reference files for this context
+     */
+    public List&lt;ReferenceFile&gt; getReferenceFiles() {
+<span class="fc" id="L78">        return Collections.unmodifiableList(referenceFiles);</span>
+    }
+
+    /**
+     * Checks if this context has any tasks.
+     *
+     * @return true if tasks are present
+     */
+    public boolean hasTasks() {
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        return !tasks.isEmpty();</span>
+    }
+
+    /**
+     * Checks if this context has any reference files.
+     *
+     * @return true if reference files are present
+     */
+    public boolean hasReferenceFiles() {
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        return !referenceFiles.isEmpty();</span>
+    }
+
+    /**
+     * Returns the total number of characters in the context (story + tasks + references).
+     * Useful for estimating token count and checking against context limits.
+     *
+     * @return approximate character count
+     */
+    public long estimateContextSize() {
+<span class="fc" id="L106">        long size = 0;</span>
+
+        // Story metadata
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">        if (story.getTitle() != null) size += story.getTitle().length();</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        if (story.getDescription() != null) size += story.getDescription().length();</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">        if (story.getSummary() != null) size += story.getSummary().length();</span>
+<span class="fc" id="L112">        size += story.getAcceptanceCriteria().stream()</span>
+<span class="fc" id="L113">            .mapToLong(String::length)</span>
+<span class="fc" id="L114">            .sum();</span>
+
+        // Tasks
+<span class="fc" id="L117">        size += tasks.stream()</span>
+<span class="fc" id="L118">            .mapToLong(task -&gt; {</span>
+<span class="fc" id="L119">                long taskSize = 0;</span>
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">                if (task.getTitle() != null) taskSize += task.getTitle().length();</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">                if (task.getDescription() != null) taskSize += task.getDescription().length();</span>
+<span class="fc" id="L122">                return taskSize;</span>
+            })
+<span class="fc" id="L124">            .sum();</span>
+
+        // Reference files
+<span class="fc" id="L127">        size += referenceFiles.stream()</span>
+<span class="fc" id="L128">            .mapToLong(ReferenceFile::getFileSize)</span>
+<span class="fc" id="L129">            .sum();</span>
+
+<span class="fc" id="L131">        return size;</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">        if (this == o) return true;</span>
+<span class="pc bpc" id="L137" title="2 of 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="fc" id="L138">        OrchestrationContext that = (OrchestrationContext) o;</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        return Objects.equals(story, that.story) &amp;&amp;</span>
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">               Objects.equals(workIntent, that.workIntent);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L145">        return Objects.hash(story, workIntent);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L150">        return &quot;OrchestrationContext{&quot; +</span>
+<span class="fc" id="L151">            &quot;story=&quot; + story.getId() +</span>
+            &quot;, workIntent='&quot; + workIntent + '\'' +
+<span class="fc" id="L153">            &quot;, tasks=&quot; + tasks.size() +</span>
+<span class="fc" id="L154">            &quot;, referenceFiles=&quot; + referenceFiles.size() +</span>
+<span class="fc" id="L155">            &quot;, estimatedSize=&quot; + estimateContextSize() + &quot; chars&quot; +</span>
+            '}';
+    }
+
+    /**
+     * Builder class for OrchestrationContext.
+     */
+    public static class Builder {
+        private Story story;
+        private String workIntent;
+        private List&lt;Task&gt; tasks;
+        private List&lt;ReferenceFile&gt; referenceFiles;
+
+        private Builder() {}
+
+        /**
+         * Sets the story (required).
+         *
+         * @param story the story for this context
+         * @return this builder
+         */
+        public Builder story(Story story) {
+<span class="fc" id="L177">            this.story = story;</span>
+<span class="fc" id="L178">            return this;</span>
+        }
+
+        /**
+         * Sets the work intent (required).
+         *
+         * @param workIntent description of what work to perform
+         * @return this builder
+         */
+        public Builder workIntent(String workIntent) {
+<span class="fc" id="L188">            this.workIntent = workIntent;</span>
+<span class="fc" id="L189">            return this;</span>
+        }
+
+        /**
+         * Sets the tasks (optional).
+         *
+         * @param tasks the tasks associated with the story
+         * @return this builder
+         */
+        public Builder tasks(List&lt;Task&gt; tasks) {
+<span class="fc" id="L199">            this.tasks = tasks;</span>
+<span class="fc" id="L200">            return this;</span>
+        }
+
+        /**
+         * Sets the reference files (optional).
+         *
+         * @param referenceFiles the reference files to include
+         * @return this builder
+         */
+        public Builder referenceFiles(List&lt;ReferenceFile&gt; referenceFiles) {
+<span class="fc" id="L210">            this.referenceFiles = referenceFiles;</span>
+<span class="fc" id="L211">            return this;</span>
+        }
+
+        /**
+         * Builds the OrchestrationContext.
+         *
+         * @return a new OrchestrationContext instance
+         * @throws IllegalArgumentException if required fields are missing
+         */
+        public OrchestrationContext build() {
+<span class="fc" id="L221">            return new OrchestrationContext(story, workIntent, tasks, referenceFiles);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

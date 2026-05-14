@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TaskServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.application.service.impl</a> &gt; <span class="el_source">TaskServiceImpl.java</span></div><h1>TaskServiceImpl.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.application.service.impl;
+
+import com.aiworkflow.workmanagement.application.command.CreateTaskCommand;
+import com.aiworkflow.workmanagement.application.service.ActivityLogger;
+import com.aiworkflow.workmanagement.application.service.TaskService;
+import com.aiworkflow.workmanagement.domain.model.Story;
+import com.aiworkflow.workmanagement.domain.model.Task;
+import com.aiworkflow.workmanagement.domain.model.TaskState;
+import com.aiworkflow.workmanagement.domain.repository.StoryRepository;
+import com.aiworkflow.workmanagement.domain.repository.TaskRepository;
+import com.aiworkflow.workmanagement.domain.valueobject.RoleName;
+import com.aiworkflow.workmanagement.domain.valueobject.StoryId;
+import com.aiworkflow.workmanagement.domain.valueobject.TaskId;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+/**
+ * Implementation of TaskService.
+ * Note: Spring annotations will be added when Spring Boot is configured.
+ */
+public class TaskServiceImpl implements TaskService {
+
+    private final TaskRepository taskRepository;
+    private final StoryRepository storyRepository;
+    private final ActivityLogger activityLogger;
+
+    public TaskServiceImpl(TaskRepository taskRepository,
+                          StoryRepository storyRepository,
+<span class="fc" id="L32">                          ActivityLogger activityLogger) {</span>
+<span class="fc" id="L33">        this.taskRepository = taskRepository;</span>
+<span class="fc" id="L34">        this.storyRepository = storyRepository;</span>
+<span class="fc" id="L35">        this.activityLogger = activityLogger;</span>
+<span class="fc" id="L36">    }</span>
+
+    @Override
+    public Task createTask(CreateTaskCommand command) {
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        String role = command.getAssignedTo() != null ? command.getAssignedTo() : &quot;system&quot;;</span>
+        try {
+            // Find the parent story
+<span class="fc" id="L43">            StoryId storyId = new StoryId(command.getStoryId());</span>
+<span class="fc" id="L44">            Story story = storyRepository.findById(storyId)</span>
+<span class="fc" id="L45">                .orElseThrow(() -&gt; new StoryNotFoundException(&quot;Story not found: &quot; + command.getStoryId()));</span>
+
+            // Create the task
+<span class="fc" id="L48">            TaskId taskId = new TaskId(command.getTaskId());</span>
+<span class="fc" id="L49">            Task task = new Task(taskId, storyId, command.getTitle());</span>
+
+            // Set optional fields
+<span class="fc bfc" id="L52" title="All 2 branches covered.">            if (command.getDescription() != null) {</span>
+<span class="fc" id="L53">                task.updateDescription(command.getDescription());</span>
+            }
+<span class="fc bfc" id="L55" title="All 2 branches covered.">            if (command.getAssignedTo() != null) {</span>
+<span class="fc" id="L56">                task.assignTo(command.getAssignedTo());</span>
+            }
+<span class="fc bfc" id="L58" title="All 2 branches covered.">            if (command.getEstimatedHours() != null) {</span>
+<span class="fc" id="L59">                task.setEstimate(command.getEstimatedHours());</span>
+            }
+
+            // Save the task
+<span class="fc" id="L63">            Task savedTask = taskRepository.save(task);</span>
+
+            // Add task to story
+<span class="fc" id="L66">            story.addTask(savedTask);</span>
+<span class="fc" id="L67">            storyRepository.save(story);</span>
+
+            // Log the activity with enriched details
+<span class="fc" id="L70">            Map&lt;String, Object&gt; details = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L71">            details.put(&quot;title&quot;, command.getTitle());</span>
+<span class="fc" id="L72">            details.put(&quot;story_id&quot;, command.getStoryId());</span>
+<span class="fc" id="L73">            details.put(&quot;story_title&quot;, story.getTitle());</span>
+<span class="fc" id="L74">            details.put(&quot;state&quot;, TaskState.PENDING.toString());</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">            if (command.getAssignedTo() != null) {</span>
+<span class="fc" id="L76">                details.put(&quot;assigned_to&quot;, command.getAssignedTo());</span>
+            }
+<span class="fc bfc" id="L78" title="All 2 branches covered.">            if (command.getEstimatedHours() != null) {</span>
+<span class="fc" id="L79">                details.put(&quot;estimated_hours&quot;, command.getEstimatedHours());</span>
+            }
+<span class="fc" id="L81">            activityLogger.logSuccess(role, &quot;create_task&quot;, command.getTaskId(), details);</span>
+
+<span class="fc" id="L83">            return savedTask;</span>
+<span class="fc" id="L84">        } catch (Exception e) {</span>
+<span class="fc" id="L85">            Map&lt;String, Object&gt; failureDetails = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L86">            failureDetails.put(&quot;attempted_title&quot;, command.getTitle());</span>
+<span class="fc" id="L87">            failureDetails.put(&quot;story_id&quot;, command.getStoryId());</span>
+<span class="fc" id="L88">            activityLogger.logFailure(role, &quot;create_task&quot;, command.getTaskId(), e.getMessage(), failureDetails);</span>
+<span class="fc" id="L89">            throw e;</span>
+        }
+    }
+
+    @Override
+    public Task updateTask(TaskId taskId, String title, String description) {
+        try {
+<span class="fc" id="L96">            Task task = taskRepository.findById(taskId)</span>
+<span class="fc" id="L97">                .orElseThrow(() -&gt; new TaskNotFoundException(&quot;Task not found: &quot; + taskId));</span>
+
+            // Track what's being updated
+<span class="fc" id="L100">            Map&lt;String, Object&gt; details = new HashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">            String role = task.getAssignedTo() != null ? task.getAssignedTo() : &quot;system&quot;;</span>
+
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">            if (title != null) {</span>
+<span class="fc" id="L104">                details.put(&quot;updated_title&quot;, title);</span>
+<span class="fc" id="L105">                task.updateTitle(title);</span>
+            }
+<span class="fc bfc" id="L107" title="All 2 branches covered.">            if (description != null) {</span>
+<span class="fc" id="L108">                details.put(&quot;updated_description&quot;, true);</span>
+<span class="fc" id="L109">                task.updateDescription(description);</span>
+            }
+
+<span class="fc" id="L112">            Task updatedTask = taskRepository.save(task);</span>
+
+<span class="fc" id="L114">            activityLogger.logSuccess(role, &quot;update_task&quot;, taskId.getValue(), details);</span>
+
+<span class="fc" id="L116">            return updatedTask;</span>
+<span class="fc" id="L117">        } catch (Exception e) {</span>
+<span class="fc" id="L118">            activityLogger.logFailure(&quot;system&quot;, &quot;update_task&quot;, taskId.getValue(), e.getMessage(), null);</span>
+<span class="fc" id="L119">            throw e;</span>
+        }
+    }
+
+    @Override
+    public Task transitionTask(TaskId taskId, TaskState newState) {
+        try {
+<span class="fc" id="L126">            Task task = taskRepository.findById(taskId)</span>
+<span class="pc" id="L127">                .orElseThrow(() -&gt; new TaskNotFoundException(&quot;Task not found: &quot; + taskId));</span>
+
+<span class="fc" id="L129">            TaskState oldState = task.getState();</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">            String role = task.getAssignedTo() != null ? task.getAssignedTo() : &quot;system&quot;;</span>
+
+<span class="fc" id="L132">            task.transitionState(newState);</span>
+<span class="fc" id="L133">            Task updatedTask = taskRepository.save(task);</span>
+
+<span class="fc" id="L135">            Map&lt;String, Object&gt; details = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L136">            details.put(&quot;from_state&quot;, oldState.toString());</span>
+<span class="fc" id="L137">            details.put(&quot;to_state&quot;, newState.toString());</span>
+<span class="fc" id="L138">            details.put(&quot;title&quot;, task.getTitle());</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">            if (task.getAssignedTo() != null) {</span>
+<span class="fc" id="L140">                details.put(&quot;assigned_to&quot;, task.getAssignedTo());</span>
+            }
+<span class="fc" id="L142">            activityLogger.logSuccess(role, &quot;transition_task&quot;, taskId.getValue(), details);</span>
+
+<span class="fc" id="L144">            return updatedTask;</span>
+<span class="fc" id="L145">        } catch (Exception e) {</span>
+<span class="fc" id="L146">            Map&lt;String, Object&gt; failureDetails = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L147">            failureDetails.put(&quot;attempted_state&quot;, newState.toString());</span>
+<span class="fc" id="L148">            activityLogger.logFailure(&quot;system&quot;, &quot;transition_task&quot;, taskId.getValue(), e.getMessage(), failureDetails);</span>
+<span class="fc" id="L149">            throw e;</span>
+        }
+    }
+
+    @Override
+    public Task assignTask(TaskId taskId, String roleName) {
+        try {
+<span class="fc" id="L156">            Task task = taskRepository.findById(taskId)</span>
+<span class="pc" id="L157">                .orElseThrow(() -&gt; new TaskNotFoundException(&quot;Task not found: &quot; + taskId));</span>
+
+<span class="fc" id="L159">            task.assignTo(roleName);</span>
+<span class="fc" id="L160">            Task updatedTask = taskRepository.save(task);</span>
+
+<span class="fc" id="L162">            Map&lt;String, Object&gt; details = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L163">            details.put(&quot;assignedTo&quot;, roleName);</span>
+<span class="fc" id="L164">            activityLogger.logSuccess(&quot;system&quot;, &quot;assign_task&quot;, taskId.getValue(), details);</span>
+
+<span class="fc" id="L166">            return updatedTask;</span>
+<span class="nc" id="L167">        } catch (Exception e) {</span>
+<span class="nc" id="L168">            activityLogger.logFailure(&quot;system&quot;, &quot;assign_task&quot;, taskId.getValue(), e.getMessage(), null);</span>
+<span class="nc" id="L169">            throw e;</span>
+        }
+    }
+
+    @Override
+    public Optional&lt;Task&gt; findById(TaskId taskId) {
+<span class="fc" id="L175">        return taskRepository.findById(taskId);</span>
+    }
+
+    @Override
+    public List&lt;Task&gt; findByStoryId(StoryId storyId) {
+<span class="fc" id="L180">        return taskRepository.findByStoryId(storyId);</span>
+    }
+
+    @Override
+    public void deleteTask(TaskId taskId) {
+        try {
+<span class="fc" id="L186">            taskRepository.delete(taskId);</span>
+<span class="fc" id="L187">            activityLogger.logSuccess(&quot;system&quot;, &quot;delete_task&quot;, taskId.getValue(), null);</span>
+<span class="fc" id="L188">        } catch (Exception e) {</span>
+<span class="fc" id="L189">            activityLogger.logFailure(&quot;system&quot;, &quot;delete_task&quot;, taskId.getValue(), e.getMessage(), null);</span>
+<span class="fc" id="L190">            throw e;</span>
+<span class="fc" id="L191">        }</span>
+<span class="fc" id="L192">    }</span>
+
+    /**
+     * Exception thrown when a task is not found.
+     */
+    public static class TaskNotFoundException extends RuntimeException {
+        public TaskNotFoundException(String message) {
+<span class="fc" id="L199">            super(message);</span>
+<span class="fc" id="L200">        }</span>
+    }
+
+    /**
+     * Exception thrown when a story is not found.
+     */
+    public static class StoryNotFoundException extends RuntimeException {
+        public StoryNotFoundException(String message) {
+<span class="fc" id="L208">            super(message);</span>
+<span class="fc" id="L209">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

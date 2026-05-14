@@ -1,0 +1,1 @@
+{"timestamp":"2026-04-10T21:43:58.918137Z","status":500,"error":"Internal Server Error","message":"Failed to execute StateGraph: java.util.concurrent.ExecutionException: java.lang.IllegalStateException: Timed out waiting for dummy response","path":"/api/v1/orchestration/prompt","correlationId":"0f209a16-b91c-4d4b-96aa-6dbf4d2330d8"}

@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WorkspaceConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.domain.model</a> &gt; <span class="el_source">WorkspaceConfig.java</span></div><h1>WorkspaceConfig.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.domain.model;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+
+/**
+ * Entity representing workspace configuration for the AI workflow management system.
+ * Defines workspace structure, permissions, and behavioral settings.
+ */
+public class WorkspaceConfig {
+    private final Path workspaceRoot;
+    private String workspaceName;
+    private boolean autoTransitionEnabled;
+    private boolean requireApprovalForCompletion;
+    private int maxConcurrentStories;
+    private final List&lt;String&gt; allowedRoles;
+    private final List&lt;String&gt; allowedFileExtensions;
+    private Path archiveDirectory;
+    private boolean enableNotifications;
+    private String defaultAssignee;
+
+<span class="fc" id="L25">    public WorkspaceConfig(Path workspaceRoot, String workspaceName) {</span>
+<span class="pc bpc" id="L26" title="1 of 2 branches missed.">        if (workspaceRoot == null) {</span>
+<span class="nc" id="L27">            throw new IllegalArgumentException(&quot;Workspace root cannot be null&quot;);</span>
+        }
+<span class="pc bpc" id="L29" title="2 of 4 branches missed.">        if (workspaceName == null || workspaceName.isBlank()) {</span>
+<span class="nc" id="L30">            throw new IllegalArgumentException(&quot;Workspace name cannot be null or blank&quot;);</span>
+        }
+
+<span class="fc" id="L33">        this.workspaceRoot = workspaceRoot;</span>
+<span class="fc" id="L34">        this.workspaceName = workspaceName;</span>
+<span class="fc" id="L35">        this.allowedRoles = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L36">        this.allowedFileExtensions = new ArrayList&lt;&gt;();</span>
+
+        // Set defaults
+<span class="fc" id="L39">        this.autoTransitionEnabled = true;</span>
+<span class="fc" id="L40">        this.requireApprovalForCompletion = true;</span>
+<span class="fc" id="L41">        this.maxConcurrentStories = 5;</span>
+<span class="fc" id="L42">        this.enableNotifications = true;</span>
+
+        // Default allowed roles
+<span class="fc" id="L45">        this.allowedRoles.add(&quot;coder&quot;);</span>
+<span class="fc" id="L46">        this.allowedRoles.add(&quot;reviewer&quot;);</span>
+<span class="fc" id="L47">        this.allowedRoles.add(&quot;designer&quot;);</span>
+<span class="fc" id="L48">        this.allowedRoles.add(&quot;tester&quot;);</span>
+
+        // Default allowed file extensions
+<span class="fc" id="L51">        this.allowedFileExtensions.add(&quot;java&quot;);</span>
+<span class="fc" id="L52">        this.allowedFileExtensions.add(&quot;md&quot;);</span>
+<span class="fc" id="L53">        this.allowedFileExtensions.add(&quot;json&quot;);</span>
+<span class="fc" id="L54">        this.allowedFileExtensions.add(&quot;yaml&quot;);</span>
+<span class="fc" id="L55">    }</span>
+
+    // Getters
+    public Path getWorkspaceRoot() {
+<span class="fc" id="L59">        return workspaceRoot;</span>
+    }
+
+    public String getWorkspaceName() {
+<span class="nc" id="L63">        return workspaceName;</span>
+    }
+
+    public boolean isAutoTransitionEnabled() {
+<span class="nc" id="L67">        return autoTransitionEnabled;</span>
+    }
+
+    public boolean isRequireApprovalForCompletion() {
+<span class="nc" id="L71">        return requireApprovalForCompletion;</span>
+    }
+
+    public int getMaxConcurrentStories() {
+<span class="nc" id="L75">        return maxConcurrentStories;</span>
+    }
+
+    public List&lt;String&gt; getAllowedRoles() {
+<span class="nc" id="L79">        return Collections.unmodifiableList(allowedRoles);</span>
+    }
+
+    public List&lt;String&gt; getAllowedFileExtensions() {
+<span class="nc" id="L83">        return Collections.unmodifiableList(allowedFileExtensions);</span>
+    }
+
+    public Path getArchiveDirectory() {
+<span class="nc" id="L87">        return archiveDirectory;</span>
+    }
+
+    public boolean isEnableNotifications() {
+<span class="nc" id="L91">        return enableNotifications;</span>
+    }
+
+    public String getDefaultAssignee() {
+<span class="nc" id="L95">        return defaultAssignee;</span>
+    }
+
+    // Business methods
+    public void updateWorkspaceName(String name) {
+<span class="nc bnc" id="L100" title="All 4 branches missed.">        if (name == null || name.isBlank()) {</span>
+<span class="nc" id="L101">            throw new IllegalArgumentException(&quot;Workspace name cannot be null or blank&quot;);</span>
+        }
+<span class="nc" id="L103">        this.workspaceName = name;</span>
+<span class="nc" id="L104">    }</span>
+
+    public void setAutoTransitionEnabled(boolean enabled) {
+<span class="nc" id="L107">        this.autoTransitionEnabled = enabled;</span>
+<span class="nc" id="L108">    }</span>
+
+    public void setRequireApprovalForCompletion(boolean required) {
+<span class="nc" id="L111">        this.requireApprovalForCompletion = required;</span>
+<span class="nc" id="L112">    }</span>
+
+    public void setMaxConcurrentStories(int max) {
+<span class="nc bnc" id="L115" title="All 2 branches missed.">        if (max &lt; 1) {</span>
+<span class="nc" id="L116">            throw new IllegalArgumentException(&quot;Max concurrent stories must be at least 1&quot;);</span>
+        }
+<span class="nc" id="L118">        this.maxConcurrentStories = max;</span>
+<span class="nc" id="L119">    }</span>
+
+    public void addAllowedRole(String role) {
+<span class="nc bnc" id="L122" title="All 4 branches missed.">        if (role == null || role.isBlank()) {</span>
+<span class="nc" id="L123">            throw new IllegalArgumentException(&quot;Role cannot be null or blank&quot;);</span>
+        }
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        if (!allowedRoles.contains(role)) {</span>
+<span class="nc" id="L126">            allowedRoles.add(role);</span>
+        }
+<span class="nc" id="L128">    }</span>
+
+    public void removeAllowedRole(String role) {
+<span class="nc" id="L131">        allowedRoles.remove(role);</span>
+<span class="nc" id="L132">    }</span>
+
+    public boolean isRoleAllowed(String role) {
+<span class="nc" id="L135">        return allowedRoles.contains(role);</span>
+    }
+
+    public void addAllowedFileExtension(String extension) {
+<span class="nc bnc" id="L139" title="All 4 branches missed.">        if (extension == null || extension.isBlank()) {</span>
+<span class="nc" id="L140">            throw new IllegalArgumentException(&quot;Extension cannot be null or blank&quot;);</span>
+        }
+<span class="nc" id="L142">        String cleanExt = extension.replace(&quot;.&quot;, &quot;&quot;).toLowerCase();</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        if (!allowedFileExtensions.contains(cleanExt)) {</span>
+<span class="nc" id="L144">            allowedFileExtensions.add(cleanExt);</span>
+        }
+<span class="nc" id="L146">    }</span>
+
+    public void removeAllowedFileExtension(String extension) {
+<span class="nc" id="L149">        String cleanExt = extension.replace(&quot;.&quot;, &quot;&quot;).toLowerCase();</span>
+<span class="nc" id="L150">        allowedFileExtensions.remove(cleanExt);</span>
+<span class="nc" id="L151">    }</span>
+
+    public boolean isFileExtensionAllowed(String extension) {
+<span class="nc" id="L154">        String cleanExt = extension.replace(&quot;.&quot;, &quot;&quot;).toLowerCase();</span>
+<span class="nc" id="L155">        return allowedFileExtensions.contains(cleanExt);</span>
+    }
+
+    public void setArchiveDirectory(Path directory) {
+<span class="nc" id="L159">        this.archiveDirectory = directory;</span>
+<span class="nc" id="L160">    }</span>
+
+    public void setEnableNotifications(boolean enabled) {
+<span class="nc" id="L163">        this.enableNotifications = enabled;</span>
+<span class="nc" id="L164">    }</span>
+
+    public void setDefaultAssignee(String assignee) {
+<span class="nc" id="L167">        this.defaultAssignee = assignee;</span>
+<span class="nc" id="L168">    }</span>
+
+    public Path getStoryDirectory(WorkflowState state, PrioritizationState prioritization) {
+<span class="nc" id="L171">        return workspaceRoot</span>
+<span class="nc" id="L172">            .resolve(state.getDirectoryName())</span>
+<span class="nc" id="L173">            .resolve(prioritization.getDirectoryName());</span>
+    }
+
+    public Path getArchivePath() {
+<span class="nc bnc" id="L177" title="All 2 branches missed.">        if (archiveDirectory != null) {</span>
+<span class="nc" id="L178">            return archiveDirectory;</span>
+        }
+<span class="nc" id="L180">        return workspaceRoot.resolve(&quot;archive&quot;);</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L185" title="All 2 branches missed.">        if (this == o) return true;</span>
+<span class="nc bnc" id="L186" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="nc" id="L187">        WorkspaceConfig that = (WorkspaceConfig) o;</span>
+<span class="nc" id="L188">        return Objects.equals(workspaceRoot, that.workspaceRoot);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L193">        return Objects.hash(workspaceRoot);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L198">        return &quot;WorkspaceConfig{&quot; +</span>
+            &quot;workspaceRoot=&quot; + workspaceRoot +
+            &quot;, workspaceName='&quot; + workspaceName + '\'' +
+            &quot;, autoTransitionEnabled=&quot; + autoTransitionEnabled +
+            &quot;, requireApprovalForCompletion=&quot; + requireApprovalForCompletion +
+            &quot;, maxConcurrentStories=&quot; + maxConcurrentStories +
+            '}';
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OrchestrationController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.api</a> &gt; <span class="el_source">OrchestrationController.java</span></div><h1>OrchestrationController.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.api;
+
+import com.aiworkflow.workmanagement.api.dto.ArtifactReferenceResponse;
+import com.aiworkflow.workmanagement.api.dto.AssistantReference;
+import com.aiworkflow.workmanagement.api.dto.AssistantResponse;
+import com.aiworkflow.workmanagement.api.dto.OrchestrationRunDetailResponse;
+import com.aiworkflow.workmanagement.api.dto.OrchestrationRunRequest;
+import com.aiworkflow.workmanagement.api.dto.OrchestrationRunResponse;
+import com.aiworkflow.workmanagement.api.dto.OrchestrationStatusResponse;
+import com.aiworkflow.workmanagement.api.dto.StoryUsageSummaryResponse;
+import com.aiworkflow.workmanagement.domain.valueobject.StoryId;
+import com.aiworkflow.workmanagement.orchestration.domain.ArtifactReference;
+import com.aiworkflow.workmanagement.orchestration.domain.OrchestrationRequest;
+import com.aiworkflow.workmanagement.orchestration.domain.OrchestrationResult;
+import com.aiworkflow.workmanagement.orchestration.service.OrchestrationService;
+import com.aiworkflow.workmanagement.orchestration.service.StoryTokenUsageService;
+import com.aiworkflow.workmanagement.application.command.CreateCommentCommand;
+import com.aiworkflow.workmanagement.application.service.CommentService;
+import com.aiworkflow.workmanagement.domain.model.CommentType;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * REST endpoints for orchestration and usage reporting.
+ */
+@RestController
+@RequestMapping(&quot;/api/v1&quot;)
+public class OrchestrationController {
+
+    private static final String PROJECT_PLANNING_ID = &quot;PROJECT-PLANNING&quot;;
+    private static final int SUMMARY_MAX_CHARS = 280;
+
+    private final OrchestrationService orchestrationService;
+    private final OrchestrationRunRegistry runRegistry;
+    private final StoryTokenUsageService tokenUsageService;
+    private final CommentService commentService;
+
+    public OrchestrationController(
+        OrchestrationService orchestrationService,
+        OrchestrationRunRegistry runRegistry,
+        StoryTokenUsageService tokenUsageService,
+        CommentService commentService
+<span class="fc" id="L58">    ) {</span>
+<span class="fc" id="L59">        this.orchestrationService = orchestrationService;</span>
+<span class="fc" id="L60">        this.runRegistry = runRegistry;</span>
+<span class="fc" id="L61">        this.tokenUsageService = tokenUsageService;</span>
+<span class="fc" id="L62">        this.commentService = commentService;</span>
+<span class="fc" id="L63">    }</span>
+
+    @PostMapping(&quot;/orchestration/runs&quot;)
+    public ResponseEntity&lt;OrchestrationRunResponse&gt; startRun(@Valid @RequestBody OrchestrationRunRequest request) {
+<span class="fc" id="L67">        OrchestrationRequest orchestrationRequest = buildRequest(request);</span>
+<span class="fc" id="L68">        OrchestrationResult result = orchestrationService.orchestrate(orchestrationRequest);</span>
+<span class="fc" id="L69">        String storyId = resolveStoryId(request.getStoryId());</span>
+<span class="fc" id="L70">        runRegistry.record(storyId, result);</span>
+<span class="fc" id="L71">        AssistantResponse assistantResponse = buildAssistantResponse(result, storyId);</span>
+<span class="fc" id="L72">        OrchestrationRunResponse response = new OrchestrationRunResponse(</span>
+<span class="fc" id="L73">            result.getExecutionId(),</span>
+            &quot;COMPLETED&quot;,
+<span class="fc" id="L75">            result.getOutcome(),</span>
+            assistantResponse
+        );
+<span class="fc" id="L78">        return ResponseEntity.status(HttpStatus.CREATED).body(response);</span>
+    }
+
+    @PostMapping(value = &quot;/orchestration/prompt&quot;, consumes = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity&lt;OrchestrationRunResponse&gt; promptRun(
+        @RequestBody String prompt,
+        @RequestParam String requestedBy,
+        @RequestParam(required = false) String storyId
+    ) {
+<span class="fc" id="L87">        OrchestrationRequest orchestrationRequest = buildPromptRequest(prompt, requestedBy, storyId);</span>
+<span class="fc" id="L88">        OrchestrationResult result = orchestrationService.orchestrate(orchestrationRequest);</span>
+<span class="fc" id="L89">        String resolvedStoryId = resolveStoryId(storyId);</span>
+<span class="fc" id="L90">        runRegistry.record(resolvedStoryId, result);</span>
+<span class="fc" id="L91">        AssistantResponse assistantResponse = buildAssistantResponse(result, resolvedStoryId);</span>
+<span class="fc" id="L92">        OrchestrationRunResponse response = new OrchestrationRunResponse(</span>
+<span class="fc" id="L93">            result.getExecutionId(),</span>
+            &quot;COMPLETED&quot;,
+<span class="fc" id="L95">            result.getOutcome(),</span>
+            assistantResponse
+        );
+<span class="fc" id="L98">        return ResponseEntity.status(HttpStatus.CREATED).body(response);</span>
+    }
+
+    @GetMapping(&quot;/orchestration/runs/{executionId}&quot;)
+    public ResponseEntity&lt;OrchestrationRunDetailResponse&gt; getRun(@PathVariable String executionId) {
+<span class="nc" id="L103">        return runRegistry.findByExecutionId(executionId)</span>
+<span class="nc" id="L104">            .map(record -&gt; ResponseEntity.ok(toDetailResponse(record)))</span>
+<span class="nc" id="L105">            .orElseGet(() -&gt; ResponseEntity.notFound().build());</span>
+    }
+
+    @GetMapping(&quot;/stories/{storyId}/orchestration&quot;)
+    public ResponseEntity&lt;OrchestrationStatusResponse&gt; getStoryOrchestration(@PathVariable String storyId) {
+<span class="nc" id="L110">        return runRegistry.findLatestByStory(storyId)</span>
+<span class="nc" id="L111">            .map(record -&gt; ResponseEntity.ok(new OrchestrationStatusResponse(record.getExecutionId(), record.getStatus())))</span>
+<span class="nc" id="L112">            .orElseGet(() -&gt; ResponseEntity.notFound().build());</span>
+    }
+
+    @GetMapping(&quot;/stories/{storyId}/usage&quot;)
+    public ResponseEntity&lt;StoryUsageSummaryResponse&gt; getStoryUsage(@PathVariable String storyId) {
+<span class="fc" id="L117">        return ResponseEntity.ok(StoryUsageSummaryResponse.from(tokenUsageService.getSummary(new StoryId(storyId))));</span>
+    }
+
+    private OrchestrationRequest buildRequest(OrchestrationRunRequest request) {
+<span class="pc bpc" id="L121" title="2 of 4 branches missed.">        if (request.getStoryId() == null || request.getStoryId().isBlank()) {</span>
+<span class="nc" id="L122">            return OrchestrationRequest.forProject(request.getWorkIntent(), request.getRequestedBy());</span>
+        }
+<span class="fc" id="L124">        return OrchestrationRequest.forStory(new StoryId(request.getStoryId()), request.getWorkIntent(), request.getRequestedBy());</span>
+    }
+
+    private OrchestrationRequest buildPromptRequest(String prompt, String requestedBy, String storyId) {
+<span class="pc bpc" id="L128" title="2 of 4 branches missed.">        if (prompt == null || prompt.isBlank()) {</span>
+<span class="nc" id="L129">            throw new IllegalArgumentException(&quot;prompt cannot be blank&quot;);</span>
+        }
+<span class="pc bpc" id="L131" title="2 of 4 branches missed.">        if (requestedBy == null || requestedBy.isBlank()) {</span>
+<span class="nc" id="L132">            throw new IllegalArgumentException(&quot;requestedBy cannot be blank&quot;);</span>
+        }
+<span class="pc bpc" id="L134" title="2 of 4 branches missed.">        if (storyId == null || storyId.isBlank()) {</span>
+<span class="nc" id="L135">            return OrchestrationRequest.forProject(prompt, requestedBy);</span>
+        }
+<span class="fc" id="L137">        return OrchestrationRequest.forStory(new StoryId(storyId), prompt, requestedBy);</span>
+    }
+
+    private OrchestrationRunDetailResponse toDetailResponse(OrchestrationRunRecord record) {
+<span class="nc" id="L141">        OrchestrationResult result = record.getResult();</span>
+<span class="nc" id="L142">        List&lt;ArtifactReferenceResponse&gt; artifacts = result.getArtifacts().stream()</span>
+<span class="nc" id="L143">            .map(ArtifactReferenceResponse::from)</span>
+<span class="nc" id="L144">            .collect(Collectors.toList());</span>
+<span class="nc" id="L145">        AssistantResponse assistantResponse = buildAssistantResponse(result, record.getStoryId());</span>
+
+<span class="nc" id="L147">        return new OrchestrationRunDetailResponse(</span>
+<span class="nc" id="L148">            result.getExecutionId(),</span>
+<span class="nc" id="L149">            record.getStatus(),</span>
+<span class="nc" id="L150">            result.getOutcome(),</span>
+<span class="nc" id="L151">            result.getExecutionSummary(),</span>
+<span class="nc" id="L152">            result.getErrors(),</span>
+            artifacts,
+<span class="nc" id="L154">            result.getStartedAt(),</span>
+<span class="nc" id="L155">            result.getCompletedAt(),</span>
+            assistantResponse
+        );
+    }
+
+    private AssistantResponse buildAssistantResponse(OrchestrationResult result, String storyId) {
+<span class="fc" id="L161">        List&lt;AssistantReference&gt; references = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L162">        List&lt;String&gt; highlights = new ArrayList&lt;&gt;();</span>
+
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">        if (result.getExecutionSummary() != null) {</span>
+<span class="fc" id="L165">            highlights.add(summarize(result.getExecutionSummary()));</span>
+        }
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">        if (!result.getErrors().isEmpty()) {</span>
+<span class="nc" id="L168">            highlights.add(&quot;Errors: &quot; + String.join(&quot;; &quot;, result.getErrors()));</span>
+        }
+
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">        for (ArtifactReference artifact : result.getArtifacts()) {</span>
+<span class="nc" id="L172">            references.add(new AssistantReference(</span>
+                &quot;artifact&quot;,
+                storyId,
+                null,
+<span class="nc" id="L176">                artifact.getName(),</span>
+<span class="nc" id="L177">                artifact.getCreatedBy(),</span>
+<span class="nc" id="L178">                artifact.getCreatedAt()</span>
+            ));
+<span class="nc" id="L180">        }</span>
+
+<span class="fc" id="L182">        String commentId = createResponseComment(result, storyId);</span>
+<span class="pc bpc" id="L183" title="1 of 2 branches missed.">        if (commentId != null) {</span>
+<span class="fc" id="L184">            references.add(new AssistantReference(</span>
+                &quot;comment&quot;,
+                storyId,
+                commentId,
+                &quot;assistant-response&quot;,
+                &quot;orchestrator&quot;,
+<span class="fc" id="L190">                result.getCompletedAt()</span>
+            ));
+        }
+
+<span class="fc" id="L194">        String summary = summarize(result.getExecutionSummary());</span>
+<span class="fc" id="L195">        return new AssistantResponse(&quot;markdown&quot;, summary, highlights, references);</span>
+    }
+
+    private String createResponseComment(OrchestrationResult result, String storyId) {
+<span class="pc bpc" id="L199" title="1 of 2 branches missed.">        if (storyId == null) {</span>
+<span class="nc" id="L200">            return null;</span>
+        }
+<span class="fc" id="L202">        String commentId = &quot;comment__orchestrator__&quot; + formatTimestamp(result.getCompletedAt()) + &quot;.md&quot;;</span>
+<span class="fc" id="L203">        String content = buildDetailedResponse(result);</span>
+<span class="fc" id="L204">        CreateCommentCommand command = new CreateCommentCommand(</span>
+            commentId,
+            storyId,
+            &quot;orchestrator&quot;,
+            CommentType.SYSTEM,
+            content,
+<span class="fc" id="L210">            result.getExecutionId(),</span>
+            false
+        );
+<span class="fc" id="L213">        commentService.createComment(command);</span>
+<span class="fc" id="L214">        return commentId;</span>
+    }
+
+    private String buildDetailedResponse(OrchestrationResult result) {
+<span class="fc" id="L218">        StringBuilder builder = new StringBuilder();</span>
+<span class="fc" id="L219">        builder.append(&quot;# Orchestration Summary\n\n&quot;);</span>
+<span class="pc bpc" id="L220" title="1 of 2 branches missed.">        if (StringUtils.hasText(result.getExecutionSummary())) {</span>
+<span class="fc" id="L221">            builder.append(result.getExecutionSummary()).append(&quot;\n\n&quot;);</span>
+        }
+<span class="pc bpc" id="L223" title="1 of 2 branches missed.">        if (!result.getErrors().isEmpty()) {</span>
+<span class="nc" id="L224">            builder.append(&quot;## Errors\n&quot;);</span>
+<span class="nc" id="L225">            result.getErrors().forEach(error -&gt; builder.append(&quot;- &quot;).append(error).append(&quot;\n&quot;));</span>
+<span class="nc" id="L226">            builder.append(&quot;\n&quot;);</span>
+        }
+<span class="pc bpc" id="L228" title="1 of 2 branches missed.">        if (!result.getArtifacts().isEmpty()) {</span>
+<span class="nc" id="L229">            builder.append(&quot;## Artifacts\n&quot;);</span>
+<span class="nc bnc" id="L230" title="All 2 branches missed.">            for (ArtifactReference artifact : result.getArtifacts()) {</span>
+<span class="nc" id="L231">                builder.append(&quot;### &quot;).append(artifact.getName()).append(&quot; (&quot; )</span>
+<span class="nc" id="L232">                    .append(artifact.getCreatedBy()).append(&quot;)\n\n&quot;);</span>
+<span class="nc" id="L233">                builder.append(artifact.getContent()).append(&quot;\n\n&quot;);</span>
+<span class="nc" id="L234">            }</span>
+        }
+<span class="fc" id="L236">        return builder.toString().trim();</span>
+    }
+
+    private String summarize(String text) {
+<span class="pc bpc" id="L240" title="1 of 2 branches missed.">        if (!StringUtils.hasText(text)) {</span>
+<span class="nc" id="L241">            return &quot;Orchestration completed&quot;;</span>
+        }
+<span class="fc" id="L243">        String trimmed = text.trim();</span>
+<span class="pc bpc" id="L244" title="1 of 2 branches missed.">        if (trimmed.length() &lt;= SUMMARY_MAX_CHARS) {</span>
+<span class="fc" id="L245">            return trimmed;</span>
+        }
+<span class="nc" id="L247">        return trimmed.substring(0, SUMMARY_MAX_CHARS - 1) + &quot;…&quot;;</span>
+    }
+
+    private String resolveStoryId(String storyId) {
+<span class="pc bpc" id="L251" title="2 of 4 branches missed.">        if (storyId == null || storyId.isBlank()) {</span>
+<span class="nc" id="L252">            return PROJECT_PLANNING_ID;</span>
+        }
+<span class="fc" id="L254">        return storyId;</span>
+    }
+
+    private String formatTimestamp(Instant instant) {
+<span class="pc bpc" id="L258" title="1 of 2 branches missed.">        Instant timestamp = instant != null ? instant : Instant.now();</span>
+<span class="fc" id="L259">        return java.time.format.DateTimeFormatter.ofPattern(&quot;yyyy-MM-dd'T'HHmmss'Z'&quot;)</span>
+<span class="fc" id="L260">            .withZone(java.time.ZoneOffset.UTC)</span>
+<span class="fc" id="L261">            .format(timestamp);</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

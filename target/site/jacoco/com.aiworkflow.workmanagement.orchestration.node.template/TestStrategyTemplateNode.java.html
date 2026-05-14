@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TestStrategyTemplateNode.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.orchestration.node.template</a> &gt; <span class="el_source">TestStrategyTemplateNode.java</span></div><h1>TestStrategyTemplateNode.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.orchestration.node.template;
+
+import com.aiworkflow.workmanagement.orchestration.config.OrchestrationConfig;
+import com.aiworkflow.workmanagement.orchestration.domain.OrchestrationState;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
+
+/**
+ * Template node for test strategy operations.
+ * &lt;p&gt;
+ * Generates deterministic test strategy documentation based on story metadata.
+ * This node simulates what a tester agent would produce when planning
+ * comprehensive test coverage for a story.
+ *
+ * &lt;h2&gt;Output Artifact&lt;/h2&gt;
+ * &lt;ul&gt;
+ *   &lt;li&gt;&lt;strong&gt;Name&lt;/strong&gt;: test-strategy&lt;/li&gt;
+ *   &lt;li&gt;&lt;strong&gt;Role&lt;/strong&gt;: tester&lt;/li&gt;
+ *   &lt;li&gt;&lt;strong&gt;Format&lt;/strong&gt;: Markdown with test cases, coverage plan, and scenarios&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * &lt;h2&gt;Template Structure&lt;/h2&gt;
+ * &lt;pre&gt;
+ * # Test Strategy: {story title}
+ *
+ * ## Test Coverage Plan
+ * Overview of testing approach
+ *
+ * ## Unit Tests
+ * Component-level test cases
+ *
+ * ## Integration Tests
+ * Integration test scenarios
+ *
+ * ## E2E Tests
+ * End-to-end test cases
+ * &lt;/pre&gt;
+ */
+@Component
+@ConditionalOnProperty(name = &quot;orchestration.execution-mode&quot;, havingValue = &quot;template&quot;)
+public class TestStrategyTemplateNode extends AbstractTemplateNodeAction {
+
+    public TestStrategyTemplateNode(OrchestrationConfig config) {
+<span class="fc" id="L44">        super(config);</span>
+<span class="fc" id="L45">    }</span>
+
+    @Override
+    protected String getNodeName() {
+<span class="nc" id="L49">        return &quot;test-strategy&quot;;</span>
+    }
+
+    @Override
+    protected String getArtifactName() {
+<span class="fc" id="L54">        return &quot;test-strategy&quot;;</span>
+    }
+
+    @Override
+    protected String getRoleName() {
+<span class="fc" id="L59">        return &quot;tester&quot;;</span>
+    }
+
+    @Override
+    protected String generateContent(OrchestrationState state) {
+<span class="fc" id="L64">        String storyTitle = getStoryTitle(state);</span>
+<span class="fc" id="L65">        String workIntent = getWorkIntent(state);</span>
+<span class="fc" id="L66">        String description = getStoryDescription(state);</span>
+
+<span class="fc" id="L68">        StringBuilder content = new StringBuilder();</span>
+<span class="fc" id="L69">        content.append(&quot;# Test Strategy: &quot;).append(storyTitle).append(&quot;\n\n&quot;);</span>
+
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        if (!workIntent.isEmpty()) {</span>
+<span class="fc" id="L72">            content.append(&quot;**Work Intent**: &quot;).append(workIntent).append(&quot;\n\n&quot;);</span>
+        }
+
+        // Test Coverage Plan
+<span class="fc" id="L76">        content.append(&quot;## Test Coverage Plan\n\n&quot;);</span>
+<span class="fc" id="L77">        content.append(&quot;This test strategy follows the testing pyramid approach:\n\n&quot;);</span>
+<span class="fc" id="L78">        content.append(&quot;```\n&quot;);</span>
+<span class="fc" id="L79">        content.append(&quot;       ╱╲\n&quot;);</span>
+<span class="fc" id="L80">        content.append(&quot;      ╱E2E╲      (Few - Critical paths)\n&quot;);</span>
+<span class="fc" id="L81">        content.append(&quot;     ╱────╲\n&quot;);</span>
+<span class="fc" id="L82">        content.append(&quot;    ╱ Intg ╲     (Some - Component integration)\n&quot;);</span>
+<span class="fc" id="L83">        content.append(&quot;   ╱────────╲\n&quot;);</span>
+<span class="fc" id="L84">        content.append(&quot;  ╱   Unit   ╲   (Many - Business logic)\n&quot;);</span>
+<span class="fc" id="L85">        content.append(&quot; ╱────────────╲\n&quot;);</span>
+<span class="fc" id="L86">        content.append(&quot;```\n\n&quot;);</span>
+
+<span class="fc" id="L88">        content.append(&quot;**Coverage Goals**:\n&quot;);</span>
+<span class="fc" id="L89">        content.append(&quot;- Unit tests: &gt;80% code coverage\n&quot;);</span>
+<span class="fc" id="L90">        content.append(&quot;- Integration tests: All service interactions\n&quot;);</span>
+<span class="fc" id="L91">        content.append(&quot;- E2E tests: Main user workflows\n\n&quot;);</span>
+
+        // Unit Tests
+<span class="fc" id="L94">        content.append(&quot;## Unit Tests\n\n&quot;);</span>
+<span class="fc" id="L95">        content.append(&quot;### Domain Model Tests\n&quot;);</span>
+<span class="fc" id="L96">        content.append(&quot;- Entity creation and validation\n&quot;);</span>
+<span class="fc" id="L97">        content.append(&quot;- Value object immutability\n&quot;);</span>
+<span class="fc" id="L98">        content.append(&quot;- Domain invariant enforcement\n&quot;);</span>
+<span class="fc" id="L99">        content.append(&quot;- Business logic correctness\n\n&quot;);</span>
+
+<span class="fc" id="L101">        content.append(&quot;### Service Layer Tests\n&quot;);</span>
+<span class="fc" id="L102">        content.append(&quot;- Service method behavior (happy paths)\n&quot;);</span>
+<span class="fc" id="L103">        content.append(&quot;- Error handling and validation\n&quot;);</span>
+<span class="fc" id="L104">        content.append(&quot;- Edge cases and boundary conditions\n&quot;);</span>
+<span class="fc" id="L105">        content.append(&quot;- Null safety and optional handling\n\n&quot;);</span>
+
+<span class="fc" id="L107">        content.append(&quot;**Example Test Cases**:\n&quot;);</span>
+<span class="fc" id="L108">        content.append(&quot;```java\n&quot;);</span>
+<span class="fc" id="L109">        content.append(&quot;@Test\n&quot;);</span>
+<span class="fc" id="L110">        content.append(&quot;void shouldCreateEntityWithValidData() {\n&quot;);</span>
+<span class="fc" id="L111">        content.append(&quot;    // Given: Valid input data\n&quot;);</span>
+<span class="fc" id="L112">        content.append(&quot;    // When: Entity created\n&quot;);</span>
+<span class="fc" id="L113">        content.append(&quot;    // Then: Entity has correct state\n&quot;);</span>
+<span class="fc" id="L114">        content.append(&quot;}\n\n&quot;);</span>
+<span class="fc" id="L115">        content.append(&quot;@Test\n&quot;);</span>
+<span class="fc" id="L116">        content.append(&quot;void shouldRejectInvalidData() {\n&quot;);</span>
+<span class="fc" id="L117">        content.append(&quot;    // Given: Invalid input\n&quot;);</span>
+<span class="fc" id="L118">        content.append(&quot;    // When: Validation runs\n&quot;);</span>
+<span class="fc" id="L119">        content.append(&quot;    // Then: Exception thrown with message\n&quot;);</span>
+<span class="fc" id="L120">        content.append(&quot;}\n&quot;);</span>
+<span class="fc" id="L121">        content.append(&quot;```\n\n&quot;);</span>
+
+        // Integration Tests
+<span class="fc" id="L124">        content.append(&quot;## Integration Tests\n\n&quot;);</span>
+<span class="fc" id="L125">        content.append(&quot;### Service Integration Tests\n&quot;);</span>
+<span class="fc" id="L126">        content.append(&quot;- Service interaction with repositories\n&quot;);</span>
+<span class="fc" id="L127">        content.append(&quot;- Transaction behavior\n&quot;);</span>
+<span class="fc" id="L128">        content.append(&quot;- External service integration (if applicable)\n&quot;);</span>
+<span class="fc" id="L129">        content.append(&quot;- Configuration loading\n\n&quot;);</span>
+
+<span class="fc" id="L131">        content.append(&quot;**Test Scenarios**:\n&quot;);</span>
+<span class="fc" id="L132">        content.append(&quot;1. **Happy Path**: Complete workflow with valid data\n&quot;);</span>
+<span class="fc" id="L133">        content.append(&quot;2. **Error Recovery**: Graceful handling of failures\n&quot;);</span>
+<span class="fc" id="L134">        content.append(&quot;3. **Concurrent Access**: Thread safety verification\n&quot;);</span>
+<span class="fc" id="L135">        content.append(&quot;4. **Data Persistence**: Verify data correctly saved/loaded\n\n&quot;);</span>
+
+        // E2E Tests
+<span class="fc" id="L138">        content.append(&quot;## E2E Tests\n\n&quot;);</span>
+<span class="fc" id="L139">        content.append(&quot;### Critical User Workflows\n&quot;);</span>
+<span class="fc" id="L140">        content.append(&quot;1. **Main Workflow**: End-to-end happy path\n&quot;);</span>
+<span class="fc" id="L141">        content.append(&quot;   - Setup: Prepare test data\n&quot;);</span>
+<span class="fc" id="L142">        content.append(&quot;   - Execute: Run complete workflow\n&quot;);</span>
+<span class="fc" id="L143">        content.append(&quot;   - Verify: Check all side effects\n\n&quot;);</span>
+
+<span class="fc" id="L145">        content.append(&quot;2. **Error Scenario**: Error handling verification\n&quot;);</span>
+<span class="fc" id="L146">        content.append(&quot;   - Setup: Create error conditions\n&quot;);</span>
+<span class="fc" id="L147">        content.append(&quot;   - Execute: Trigger error\n&quot;);</span>
+<span class="fc" id="L148">        content.append(&quot;   - Verify: Graceful degradation\n\n&quot;);</span>
+
+        // Test Data Strategy
+<span class="fc" id="L151">        content.append(&quot;## Test Data Strategy\n\n&quot;);</span>
+<span class="fc" id="L152">        content.append(&quot;- **Unit Tests**: Use builders and test fixtures\n&quot;);</span>
+<span class="fc" id="L153">        content.append(&quot;- **Integration Tests**: Use @TempDir for file-based tests\n&quot;);</span>
+<span class="fc" id="L154">        content.append(&quot;- **E2E Tests**: Create realistic test scenarios\n&quot;);</span>
+<span class="fc" id="L155">        content.append(&quot;- **Cleanup**: Ensure tests are isolated and repeatable\n\n&quot;);</span>
+
+        // Quality Gates
+<span class="fc" id="L158">        content.append(&quot;## Quality Gates\n\n&quot;);</span>
+<span class="fc" id="L159">        content.append(&quot;All tests must pass before story completion:\n&quot;);</span>
+<span class="fc" id="L160">        content.append(&quot;- [ ] All unit tests passing\n&quot;);</span>
+<span class="fc" id="L161">        content.append(&quot;- [ ] All integration tests passing\n&quot;);</span>
+<span class="fc" id="L162">        content.append(&quot;- [ ] All E2E tests passing\n&quot;);</span>
+<span class="fc" id="L163">        content.append(&quot;- [ ] Code coverage &gt;80%\n&quot;);</span>
+<span class="fc" id="L164">        content.append(&quot;- [ ] No failing assertions\n&quot;);</span>
+<span class="fc" id="L165">        content.append(&quot;- [ ] No ignored/skipped tests without justification\n\n&quot;);</span>
+
+        // Metadata footer
+<span class="fc" id="L168">        content.append(&quot;---\n&quot;);</span>
+<span class="fc" id="L169">        content.append(&quot;*Generated by: Template Test Strategy Node*\n&quot;);</span>
+
+<span class="fc" id="L171">        return content.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

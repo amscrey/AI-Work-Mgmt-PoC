@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReferenceFile.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">AI Work Management Platform</a> &gt; <a href="index.source.html" class="el_package">com.aiworkflow.workmanagement.orchestration.domain</a> &gt; <span class="el_source">ReferenceFile.java</span></div><h1>ReferenceFile.java</h1><pre class="source lang-java linenums">package com.aiworkflow.workmanagement.orchestration.domain;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.util.Objects;
+
+/**
+ * Value object representing a reference file from the workspace/reference/ directory.
+ * Reference files are read-only markdown files that provide context for orchestration.
+ * These are typically approved artifacts or documentation created by humans or agents.
+ */
+public class ReferenceFile {
+    private final Path filePath;
+    private final String fileName;
+    private final String content;
+    private final long fileSize;
+    private final Instant lastModified;
+
+    /**
+     * Private constructor - use fromFile() factory method instead.
+     */
+<span class="fc" id="L24">    private ReferenceFile(Path filePath, String fileName, String content, long fileSize, Instant lastModified) {</span>
+<span class="fc" id="L25">        this.filePath = filePath;</span>
+<span class="fc" id="L26">        this.fileName = fileName;</span>
+<span class="fc" id="L27">        this.content = content;</span>
+<span class="fc" id="L28">        this.fileSize = fileSize;</span>
+<span class="fc" id="L29">        this.lastModified = lastModified;</span>
+<span class="fc" id="L30">    }</span>
+
+    /**
+     * Factory method to create a ReferenceFile from a filesystem path.
+     * Reads the file content and metadata.
+     *
+     * @param path the path to the reference file
+     * @return a new ReferenceFile instance
+     * @throws IOException if the file cannot be read
+     * @throws IllegalArgumentException if the path is null or doesn't exist
+     */
+    public static ReferenceFile fromFile(Path path) throws IOException {
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        if (path == null) {</span>
+<span class="fc" id="L43">            throw new IllegalArgumentException(&quot;File path cannot be null&quot;);</span>
+        }
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if (!Files.exists(path)) {</span>
+<span class="fc" id="L46">            throw new IllegalArgumentException(&quot;File does not exist: &quot; + path);</span>
+        }
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        if (!Files.isRegularFile(path)) {</span>
+<span class="fc" id="L49">            throw new IllegalArgumentException(&quot;Path is not a regular file: &quot; + path);</span>
+        }
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        if (!Files.isReadable(path)) {</span>
+<span class="nc" id="L52">            throw new IllegalArgumentException(&quot;File is not readable: &quot; + path);</span>
+        }
+
+        // Read file content
+<span class="fc" id="L56">        String content = Files.readString(path);</span>
+
+        // Get file metadata
+<span class="fc" id="L59">        String fileName = path.getFileName().toString();</span>
+<span class="fc" id="L60">        long fileSize = Files.size(path);</span>
+<span class="fc" id="L61">        Instant lastModified = Files.getLastModifiedTime(path).toInstant();</span>
+
+<span class="fc" id="L63">        return new ReferenceFile(path, fileName, content, fileSize, lastModified);</span>
+    }
+
+    /**
+     * Attempts to create a ReferenceFile from a path, returning null if it fails.
+     * Useful for scenarios where file read errors should be handled gracefully.
+     *
+     * @param path the path to the reference file
+     * @return a new ReferenceFile instance, or null if the file cannot be read
+     */
+    public static ReferenceFile tryFromFile(Path path) {
+        try {
+<span class="fc" id="L75">            return fromFile(path);</span>
+<span class="fc" id="L76">        } catch (IOException | IllegalArgumentException e) {</span>
+<span class="fc" id="L77">            return null;</span>
+        }
+    }
+
+    public Path getFilePath() {
+<span class="fc" id="L82">        return filePath;</span>
+    }
+
+    public String getFileName() {
+<span class="fc" id="L86">        return fileName;</span>
+    }
+
+    public String getContent() {
+<span class="fc" id="L90">        return content;</span>
+    }
+
+    public long getFileSize() {
+<span class="fc" id="L94">        return fileSize;</span>
+    }
+
+    public Instant getLastModified() {
+<span class="fc" id="L98">        return lastModified;</span>
+    }
+
+    /**
+     * Returns the file extension (e.g., &quot;md&quot;, &quot;txt&quot;).
+     *
+     * @return the file extension without the dot
+     */
+    public String getExtension() {
+<span class="fc" id="L107">        int lastDot = fileName.lastIndexOf('.');</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        return lastDot &gt; 0 ? fileName.substring(lastDot + 1) : &quot;&quot;;</span>
+    }
+
+    /**
+     * Checks if this is a markdown file.
+     *
+     * @return true if the file extension is .md
+     */
+    public boolean isMarkdown() {
+<span class="fc" id="L117">        return &quot;md&quot;.equalsIgnoreCase(getExtension());</span>
+    }
+
+    /**
+     * Returns the content size in a human-readable format.
+     *
+     * @return formatted file size (e.g., &quot;1.5 KB&quot;, &quot;234 bytes&quot;)
+     */
+    public String getFormattedSize() {
+<span class="fc bfc" id="L126" title="All 2 branches covered.">        if (fileSize &lt; 1024) {</span>
+<span class="fc" id="L127">            return fileSize + &quot; bytes&quot;;</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">        } else if (fileSize &lt; 1024 * 1024) {</span>
+<span class="fc" id="L129">            return String.format(&quot;%.2f KB&quot;, fileSize / 1024.0);</span>
+        } else {
+<span class="fc" id="L131">            return String.format(&quot;%.2f MB&quot;, fileSize / (1024.0 * 1024.0));</span>
+        }
+    }
+
+    /**
+     * Returns a summary of the reference file for logging/debugging.
+     *
+     * @return summary string
+     */
+    public String getSummary() {
+<span class="fc" id="L141">        return String.format(&quot;%s (%s, modified %s)&quot;,</span>
+<span class="fc" id="L142">            fileName, getFormattedSize(), lastModified);</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">        if (this == o) return true;</span>
+<span class="pc bpc" id="L148" title="2 of 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="fc" id="L149">        ReferenceFile that = (ReferenceFile) o;</span>
+<span class="fc" id="L150">        return Objects.equals(filePath, that.filePath);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L155">        return Objects.hash(filePath);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L160">        return &quot;ReferenceFile{&quot; +</span>
+            &quot;fileName='&quot; + fileName + '\'' +
+<span class="fc" id="L162">            &quot;, fileSize=&quot; + getFormattedSize() +</span>
+            &quot;, lastModified=&quot; + lastModified +
+            '}';
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

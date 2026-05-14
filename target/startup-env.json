@@ -1,0 +1,14 @@
+{
+  "timestamp" : "2026-04-10T21:20:26.694483Z",
+  "activeProfiles" : [ ],
+  "spring.devtools.restart.enabled" : "false",
+  "spring.devtools.remote.restart.enabled" : "false",
+  "spring.devtools.add-properties" : "false",
+  "orchestration.llm.dummy.mode" : null,
+  "orchestration.llm.dummy.bridge-root" : null,
+  "orchestration.llm.default-provider" : "dummy",
+  "env.WORKSPACE_ROOT" : "/Users/dc24863/dev/PoC/AI-Assisted-Projects/Jaws-Online",
+  "env.BRIDGE_ROOT" : "/Users/dc24863/dev/PoC/AI-Assisted-Projects/Jaws-Online/dummy-bridge",
+  "user.dir" : "/Users/dc24863/dev/PoC/AI-Work-Mgmt",
+  "java.version" : "17.0.14"
+}
