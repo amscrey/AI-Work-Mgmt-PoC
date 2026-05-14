@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.aiworkflow.workmanagement.infrastructure.persistence.FileBasedCommentRepositoryIT$DeleteTests
--------------------------------------------------------------------------------
-Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.01 s - in com.aiworkflow.workmanagement.infrastructure.persistence.FileBasedCommentRepositoryIT$DeleteTests

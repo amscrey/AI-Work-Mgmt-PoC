@@ -26,5 +26,17 @@ bin/
 ### VS Code ###
 .vscode/
 
+# Logs
+*.log
+logs/*
+
+# Package files
+*.jar
+*.war
+*.ear
+
+# Maven
+target/
+
 ### Mac OS ###
 .DS_Store
