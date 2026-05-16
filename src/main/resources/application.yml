@@ -49,6 +49,12 @@ logging:
     com.aiworkflow.workmanagement: INFO
     com.aiworkflow.workmanagement.orchestration: DEBUG
     com.aiworkflow.workmanagement.orchestration.llm: DEBUG
+    # Enable LangChain4j HTTP client logging to see actual URLs
+    dev.langchain4j: DEBUG
+    dev.langchain4j.model.anthropic: DEBUG
+    # Enable Java HTTP client logging to see full requests
+    jdk.httpclient: TRACE
+    jdk.internal.httpclient: TRACE
 
 # Spring Boot configuration
 spring:

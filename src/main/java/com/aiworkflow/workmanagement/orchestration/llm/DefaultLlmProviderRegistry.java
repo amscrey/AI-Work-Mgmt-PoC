@@ -150,6 +150,7 @@ public class DefaultLlmProviderRegistry implements LlmProviderRegistry {
             String actualBaseUrl = extractAnthropicBaseUrl(model);
             if (actualBaseUrl != null) {
                 logger.info("Anthropic ChatModel actual baseUrl (via reflection): {}", actualBaseUrl);
+                logger.info("Full Anthropic API URL will be: {}/messages", actualBaseUrl);
             }
         } catch (Exception e) {
             logger.debug("Could not extract baseUrl via reflection: {}", e.getMessage());
@@ -165,30 +166,41 @@ public class DefaultLlmProviderRegistry implements LlmProviderRegistry {
     private String extractAnthropicBaseUrl(ChatModel model) {
         try {
             if (model instanceof AnthropicChatModel) {
-                // AnthropicChatModel has a 'client' field that contains the base URL
+                // AnthropicChatModel has a 'client' field of type DefaultAnthropicClient
                 Field clientField = model.getClass().getDeclaredField("client");
                 clientField.setAccessible(true);
                 Object client = clientField.get(model);
 
                 if (client != null) {
-                    // The client has a baseUrl field
+                    // The DefaultAnthropicClient has a baseUrl field
                     Class<?> clientClass = client.getClass();
-                    try {
-                        Field baseUrlField = clientClass.getDeclaredField("baseUrl");
+                    logger.debug("Client class: {}", clientClass.getName());
+
+                    // Look for baseUrl field in the client class and its superclasses
+                    Field baseUrlField = null;
+                    Class<?> searchClass = clientClass;
+                    while (searchClass != null && baseUrlField == null) {
+                        try {
+                            baseUrlField = searchClass.getDeclaredField("baseUrl");
+                        } catch (NoSuchFieldException e) {
+                            searchClass = searchClass.getSuperclass();
+                        }
+                    }
+
+                    if (baseUrlField != null) {
                         baseUrlField.setAccessible(true);
                         Object baseUrl = baseUrlField.get(client);
                         if (baseUrl != null) {
+                            logger.debug("Successfully extracted baseUrl via reflection: {}", baseUrl);
                             return baseUrl.toString();
                         }
-                    } catch (NoSuchFieldException e) {
-                        // Try to find it in parent class or toString()
-                        logger.debug("Could not find baseUrl field in client class: {}", clientClass.getName());
-                        logger.debug("Client toString: {}", client);
+                    } else {
+                        logger.warn("Could not find baseUrl field in client hierarchy. Client class: {}", clientClass.getName());
                     }
                 }
             }
         } catch (Exception e) {
-            logger.trace("Reflection failed while extracting baseUrl", e);
+            logger.debug("Reflection failed while extracting baseUrl: {}", e.getMessage(), e);
         }
         return null;
     }
