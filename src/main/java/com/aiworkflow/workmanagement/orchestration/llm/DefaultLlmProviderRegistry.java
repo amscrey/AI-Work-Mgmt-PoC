@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
@@ -67,10 +68,10 @@ public class DefaultLlmProviderRegistry implements LlmProviderRegistry {
             try {
                 ChatModel chatModel = createChatModel(provider);
                 String maskedKey = maskApiKey(provider.getApiKey());
-                logger.info("Registered REAL LLM client: provider={}, model={}, baseUrl={}, apiKey={}",
-                    provider.getName(), provider.getModel(),
-                    provider.getBaseUrl() != null ? provider.getBaseUrl() : "default",
-                    maskedKey);
+                String effectiveBaseUrl = provider.getBaseUrl() != null ? provider.getBaseUrl() : "default";
+                logger.info("Registered REAL LLM client: provider={}, model={}, baseUrl={}, apiKey={}, chatModelClass={}",
+                    provider.getName(), provider.getModel(), effectiveBaseUrl, maskedKey, chatModel.getClass().getName());
+                logger.debug("ChatModel instance details: {}", chatModel);
                 map.put(provider.getName(), new RealLlmChatClient(provider.getName(), provider.getModel(), chatModel));
             } catch (Exception e) {
                 logger.error("Failed to create real LLM client for provider '{}'; falling back to stubbed client. Error: {}",
@@ -120,6 +121,11 @@ public class DefaultLlmProviderRegistry implements LlmProviderRegistry {
     }
 
     private ChatModel createAnthropicModel(LlmProviderConfig provider) {
+        String baseUrl = provider.getBaseUrl();
+        String effectiveBaseUrl = (baseUrl != null && !baseUrl.isBlank()) ? baseUrl : "https://api.anthropic.com/v1 (default)";
+
+        logger.info("Creating Anthropic ChatModel: model={}, baseUrl={}", provider.getModel(), effectiveBaseUrl);
+
         AnthropicChatModel.AnthropicChatModelBuilder builder = AnthropicChatModel.builder()
             .apiKey(provider.getApiKey())
             .modelName(provider.getModel())
@@ -127,10 +133,59 @@ public class DefaultLlmProviderRegistry implements LlmProviderRegistry {
 
         // Support custom base URL (for corporate proxies)
         if (provider.getBaseUrl() != null && !provider.getBaseUrl().isBlank()) {
+            logger.info("Setting custom baseUrl for Anthropic: {}", provider.getBaseUrl());
             builder.baseUrl(provider.getBaseUrl());
         }
 
-        return builder.build();
+        ChatModel model = builder.build();
+        logger.info("Anthropic ChatModel created successfully: {}", model.getClass().getName());
+
+        // Try to extract the actual base URL using reflection for debugging
+        try {
+            String actualBaseUrl = extractAnthropicBaseUrl(model);
+            if (actualBaseUrl != null) {
+                logger.info("Anthropic ChatModel actual baseUrl (via reflection): {}", actualBaseUrl);
+            }
+        } catch (Exception e) {
+            logger.debug("Could not extract baseUrl via reflection: {}", e.getMessage());
+        }
+
+        return model;
+    }
+
+    /**
+     * Attempts to extract the base URL from an AnthropicChatModel using reflection.
+     * This is for debugging purposes only.
+     */
+    private String extractAnthropicBaseUrl(ChatModel model) {
+        try {
+            if (model instanceof AnthropicChatModel) {
+                // AnthropicChatModel has a 'client' field that contains the base URL
+                Field clientField = model.getClass().getDeclaredField("client");
+                clientField.setAccessible(true);
+                Object client = clientField.get(model);
+
+                if (client != null) {
+                    // The client has a baseUrl field
+                    Class<?> clientClass = client.getClass();
+                    try {
+                        Field baseUrlField = clientClass.getDeclaredField("baseUrl");
+                        baseUrlField.setAccessible(true);
+                        Object baseUrl = baseUrlField.get(client);
+                        if (baseUrl != null) {
+                            return baseUrl.toString();
+                        }
+                    } catch (NoSuchFieldException e) {
+                        // Try to find it in parent class or toString()
+                        logger.debug("Could not find baseUrl field in client class: {}", clientClass.getName());
+                        logger.debug("Client toString: {}", client);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.trace("Reflection failed while extracting baseUrl", e);
+        }
+        return null;
     }
 
     private ChatModel createGeminiModel(LlmProviderConfig provider) {
