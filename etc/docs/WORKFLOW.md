@@ -1,7 +1,7 @@
 # Story Lifecycle Workflow
 
-**Version**: 1.0
-**Last Updated**: 2026-04-03
+**Version**: 1.1
+**Last Updated**: 2026-05-16
 
 This document defines the complete story lifecycle workflow for the AI Work Management Platform. All agents and developers must follow these rules.
 
@@ -9,12 +9,60 @@ This document defines the complete story lifecycle workflow for the AI Work Mana
 
 ## Table of Contents
 
-1. [Story States](#story-states)
-2. [Workflow Rules](#workflow-rules)
-3. [Agent Responsibilities](#agent-responsibilities)
-4. [Code Examples](#code-examples)
-5. [Common Patterns](#common-patterns)
-6. [Troubleshooting](#troubleshooting)
+1. [Project Planning](#project-planning)
+2. [Story States](#story-states)
+3. [Workflow Rules](#workflow-rules)
+4. [Agent Responsibilities](#agent-responsibilities)
+5. [Code Examples](#code-examples)
+6. [Common Patterns](#common-patterns)
+7. [Troubleshooting](#troubleshooting)
+
+---
+
+## Project Planning
+
+### The PROJECT-PLANNING Special Story
+
+**PROJECT-PLANNING** is a special reserved story ID used for project-level work before individual stories are created.
+
+**Purpose**:
+- Initial requirements gathering
+- Project scope definition
+- Story ideation and planning
+- Architecture planning
+- Creating initial story backlog
+
+**How It Works**:
+- When no `storyId` is provided to the prompt endpoint, requests automatically route to PROJECT-PLANNING
+- PROJECT-PLANNING artifacts are stored in `prioritized/PROJECT-PLANNING/artifacts/`
+- Use this for exploratory work before stories exist
+
+**Usage Example**:
+```bash
+# Send a prompt without storyId - routes to PROJECT-PLANNING
+curl -X POST http://localhost:8080/api/v1/orchestration/prompt \
+  -H 'Content-Type: text/plain' \
+  --data-urlencode 'requestedBy=human' \
+  --data 'Analyze requirements for inventory management system and suggest initial stories'
+```
+
+**Workflow**:
+1. **Initial Project Setup**: Use PROJECT-PLANNING for requirements analysis
+2. **Story Creation**: Orchestrator creates BACKLOG stories based on PROJECT-PLANNING artifacts
+3. **Story Execution**: Work proceeds on specific stories following normal workflow
+
+**Directory Structure**:
+```
+workspace/
+├── prioritized/
+│   └── PROJECT-PLANNING/         # Project-level artifacts
+│       ├── story.json
+│       ├── artifacts/
+│       │   ├── requirements-analysis__researcher__timestamp.md
+│       │   ├── story-backlog__designer__timestamp.md
+│       │   └── human-response__human__timestamp.md
+│       └── comments/
+```
 
 ---
 
@@ -695,6 +743,7 @@ Never:
 ---
 
 **Version History**:
+- 1.1 (2026-05-16): Added PROJECT-PLANNING section for project initialization
 - 1.0 (2026-04-03): Initial version with prioritization workflow
 
 ---
