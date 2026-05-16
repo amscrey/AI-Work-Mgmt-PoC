@@ -48,6 +48,7 @@ logging:
   level:
     com.aiworkflow.workmanagement: INFO
     com.aiworkflow.workmanagement.orchestration: DEBUG
+    com.aiworkflow.workmanagement.orchestration.llm: DEBUG
 
 # Spring Boot configuration
 spring:
