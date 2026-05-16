@@ -72,7 +72,12 @@ public class DefaultLlmProviderRegistry implements LlmProviderRegistry {
                 logger.info("Registered REAL LLM client: provider={}, model={}, baseUrl={}, apiKey={}, chatModelClass={}",
                     provider.getName(), provider.getModel(), effectiveBaseUrl, maskedKey, chatModel.getClass().getName());
                 logger.debug("ChatModel instance details: {}", chatModel);
-                map.put(provider.getName(), new RealLlmChatClient(provider.getName(), provider.getModel(), chatModel));
+                map.put(provider.getName(), new RealLlmChatClient(
+                    provider.getName(),
+                    provider.getModel(),
+                    chatModel,
+                    provider.getBaseUrl()
+                ));
             } catch (Exception e) {
                 logger.error("Failed to create real LLM client for provider '{}'; falling back to stubbed client. Error: {}",
                     provider.getName(), e.getMessage());

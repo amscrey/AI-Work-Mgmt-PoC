@@ -20,19 +20,26 @@ public class RealLlmChatClient implements LLMChatClient {
     private final String providerName;
     private final String modelName;
     private final ChatModel chatModel;
+    private final String configuredBaseUrl;
 
     public RealLlmChatClient(String providerName, String modelName, ChatModel chatModel) {
+        this(providerName, modelName, chatModel, null);
+    }
+
+    public RealLlmChatClient(String providerName, String modelName, ChatModel chatModel, String configuredBaseUrl) {
         this.providerName = providerName;
         this.modelName = modelName;
         this.chatModel = chatModel;
+        this.configuredBaseUrl = configuredBaseUrl;
     }
 
     @Override
     public LlmChatResponse generate(String roleName, String prompt) {
         long startTime = System.currentTimeMillis();
         try {
-            logger.debug("Making LLM API call: provider={}, model={}, role={}, chatModel={}",
-                providerName, modelName, roleName, chatModel.getClass().getName());
+            String baseUrlInfo = configuredBaseUrl != null ? configuredBaseUrl : "default";
+            logger.debug("Making LLM API call: provider={}, model={}, role={}, baseUrl={}, chatModel={}",
+                providerName, modelName, roleName, baseUrlInfo, chatModel.getClass().getName());
 
             // LangChain4j 1.x API: chat() instead of generate()
             ChatResponse response = chatModel.chat(UserMessage.from(prompt));
@@ -59,9 +66,11 @@ public class RealLlmChatClient implements LLMChatClient {
 
             return new LlmChatResponse(content, providerName, modelName, usage);
         } catch (Exception e) {
-            logger.error("LLM API call failed: provider={}, model={}, chatModel={}, error={}",
-                providerName, modelName, chatModel.getClass().getName(), e.getMessage(), e);
-            throw new RuntimeException("LLM API call failed for provider=" + providerName + ", model=" + modelName, e);
+            String baseUrlInfo = configuredBaseUrl != null ? configuredBaseUrl : "default (https://api.anthropic.com/v1)";
+            logger.error("LLM API call failed: provider={}, model={}, baseUrl={}, chatModel={}, error={}",
+                providerName, modelName, baseUrlInfo, chatModel.getClass().getName(), e.getMessage(), e);
+            throw new RuntimeException("LLM API call failed for provider=" + providerName
+                + ", model=" + modelName + ", baseUrl=" + baseUrlInfo, e);
         }
     }
 }
