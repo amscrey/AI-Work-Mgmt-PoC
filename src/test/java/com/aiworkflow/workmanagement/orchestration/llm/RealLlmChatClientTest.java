@@ -4,8 +4,8 @@ import com.aiworkflow.workmanagement.orchestration.domain.LlmChatResponse;
 import com.aiworkflow.workmanagement.orchestration.domain.LlmUsage;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.output.Response;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.output.TokenUsage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
 class RealLlmChatClientTest {
 
     @Mock
-    private ChatLanguageModel mockChatModel;
+    private ChatModel mockChatModel;
 
     private RealLlmChatClient client;
 
@@ -49,8 +49,10 @@ class RealLlmChatClientTest {
         void shouldGenerateResponseWithValidInput() {
             // Given: Mock response with content
             AiMessage aiMessage = AiMessage.from("Here is my analysis of the requirements...");
-            Response<AiMessage> mockResponse = Response.from(aiMessage);
-            when(mockChatModel.generate(any(UserMessage.class))).thenReturn(mockResponse);
+            ChatResponse mockResponse = ChatResponse.builder()
+                .aiMessage(aiMessage)
+                .build();
+            when(mockChatModel.chat(any(UserMessage.class))).thenReturn(mockResponse);
 
             // When: Generate response
             LlmChatResponse response = client.generate(ROLE_NAME, PROMPT);
@@ -63,8 +65,8 @@ class RealLlmChatClientTest {
 
             // Verify UserMessage was created correctly
             ArgumentCaptor<UserMessage> messageCaptor = ArgumentCaptor.forClass(UserMessage.class);
-            verify(mockChatModel).generate(messageCaptor.capture());
-            assertThat(messageCaptor.getValue().text()).isEqualTo(PROMPT);
+            verify(mockChatModel).chat(messageCaptor.capture());
+            assertThat(messageCaptor.getValue().singleText()).isEqualTo(PROMPT);
         }
 
         @Test
@@ -73,8 +75,11 @@ class RealLlmChatClientTest {
             // Given: Mock response with token usage
             AiMessage aiMessage = AiMessage.from("Response text");
             TokenUsage tokenUsage = new TokenUsage(150, 75);
-            Response<AiMessage> mockResponse = Response.from(aiMessage, tokenUsage);
-            when(mockChatModel.generate(any(UserMessage.class))).thenReturn(mockResponse);
+            ChatResponse mockResponse = ChatResponse.builder()
+                .aiMessage(aiMessage)
+                .tokenUsage(tokenUsage)
+                .build();
+            when(mockChatModel.chat(any(UserMessage.class))).thenReturn(mockResponse);
 
             // When: Generate response
             long startTime = System.currentTimeMillis();
@@ -99,8 +104,11 @@ class RealLlmChatClientTest {
             // Given: Mock response with delay
             AiMessage aiMessage = AiMessage.from("Delayed response");
             TokenUsage tokenUsage = new TokenUsage(100, 50);
-            Response<AiMessage> mockResponse = Response.from(aiMessage, tokenUsage);
-            when(mockChatModel.generate(any(UserMessage.class))).thenAnswer(invocation -> {
+            ChatResponse mockResponse = ChatResponse.builder()
+                .aiMessage(aiMessage)
+                .tokenUsage(tokenUsage)
+                .build();
+            when(mockChatModel.chat(any(UserMessage.class))).thenAnswer(invocation -> {
                 Thread.sleep(50); // Simulate 50ms API call
                 return mockResponse;
             });
@@ -122,8 +130,10 @@ class RealLlmChatClientTest {
         void shouldHandleNullTokenUsage() {
             // Given: Mock response without token usage
             AiMessage aiMessage = AiMessage.from("Response without usage");
-            Response<AiMessage> mockResponse = Response.from(aiMessage, null);
-            when(mockChatModel.generate(any(UserMessage.class))).thenReturn(mockResponse);
+            ChatResponse mockResponse = ChatResponse.builder()
+                .aiMessage(aiMessage)
+                .build();
+            when(mockChatModel.chat(any(UserMessage.class))).thenReturn(mockResponse);
 
             // When: Generate response
             LlmChatResponse response = client.generate(ROLE_NAME, PROMPT);
@@ -139,8 +149,10 @@ class RealLlmChatClientTest {
         void shouldHandleEmptyResponseContent() {
             // Given: Mock response with empty text
             AiMessage aiMessage = AiMessage.from("");
-            Response<AiMessage> mockResponse = Response.from(aiMessage);
-            when(mockChatModel.generate(any(UserMessage.class))).thenReturn(mockResponse);
+            ChatResponse mockResponse = ChatResponse.builder()
+                .aiMessage(aiMessage)
+                .build();
+            when(mockChatModel.chat(any(UserMessage.class))).thenReturn(mockResponse);
 
             // When: Generate response
             LlmChatResponse response = client.generate(ROLE_NAME, PROMPT);
@@ -160,9 +172,9 @@ class RealLlmChatClientTest {
         @Test
         @DisplayName("Should wrap exception with provider context")
         void shouldWrapExceptionWithProviderContext() {
-            // Given: ChatLanguageModel that throws exception
+            // Given: ChatModel that throws exception
             RuntimeException apiError = new RuntimeException("API authentication failed");
-            when(mockChatModel.generate(any(UserMessage.class))).thenThrow(apiError);
+            when(mockChatModel.chat(any(UserMessage.class))).thenThrow(apiError);
 
             // When/Then: Exception is wrapped with context
             assertThatThrownBy(() -> client.generate(ROLE_NAME, PROMPT))
@@ -178,7 +190,7 @@ class RealLlmChatClientTest {
         void shouldPropagateApiTimeoutExceptions() {
             // Given: API timeout
             RuntimeException timeoutError = new RuntimeException("Request timeout after 30s");
-            when(mockChatModel.generate(any(UserMessage.class))).thenThrow(timeoutError);
+            when(mockChatModel.chat(any(UserMessage.class))).thenThrow(timeoutError);
 
             // When/Then: Timeout is propagated with context
             assertThatThrownBy(() -> client.generate(ROLE_NAME, PROMPT))
@@ -192,7 +204,7 @@ class RealLlmChatClientTest {
         void shouldHandleRateLimitErrors() {
             // Given: Rate limit error
             RuntimeException rateLimitError = new RuntimeException("Rate limit exceeded: 429");
-            when(mockChatModel.generate(any(UserMessage.class))).thenThrow(rateLimitError);
+            when(mockChatModel.chat(any(UserMessage.class))).thenThrow(rateLimitError);
 
             // When/Then: Error includes provider context for debugging
             assertThatThrownBy(() -> client.generate(ROLE_NAME, PROMPT))
@@ -214,8 +226,10 @@ class RealLlmChatClientTest {
             RealLlmChatClient geminiClient = new RealLlmChatClient("gemini", "gemini-2.0", mockChatModel);
 
             AiMessage aiMessage = AiMessage.from("test");
-            Response<AiMessage> mockResponse = Response.from(aiMessage);
-            when(mockChatModel.generate(any(UserMessage.class))).thenReturn(mockResponse);
+            ChatResponse mockResponse = ChatResponse.builder()
+                .aiMessage(aiMessage)
+                .build();
+            when(mockChatModel.chat(any(UserMessage.class))).thenReturn(mockResponse);
 
             // When: Generate from different clients
             LlmChatResponse anthropicResponse = anthropicClient.generate(ROLE_NAME, PROMPT);
@@ -234,8 +248,10 @@ class RealLlmChatClientTest {
             RealLlmChatClient opusClient = new RealLlmChatClient("anthropic", "claude-opus-4-0", mockChatModel);
 
             AiMessage aiMessage = AiMessage.from("test");
-            Response<AiMessage> mockResponse = Response.from(aiMessage);
-            when(mockChatModel.generate(any(UserMessage.class))).thenReturn(mockResponse);
+            ChatResponse mockResponse = ChatResponse.builder()
+                .aiMessage(aiMessage)
+                .build();
+            when(mockChatModel.chat(any(UserMessage.class))).thenReturn(mockResponse);
 
             // When: Generate from different clients
             LlmChatResponse sonnetResponse = sonnetClient.generate(ROLE_NAME, PROMPT);

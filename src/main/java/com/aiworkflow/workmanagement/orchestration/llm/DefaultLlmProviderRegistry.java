@@ -4,7 +4,7 @@ import com.aiworkflow.workmanagement.orchestration.domain.LlmConfigSnapshot;
 import com.aiworkflow.workmanagement.orchestration.domain.LlmProviderConfig;
 import com.aiworkflow.workmanagement.orchestration.service.LlmConfigLoader;
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -65,7 +65,7 @@ public class DefaultLlmProviderRegistry implements LlmProviderRegistry {
 
             // Create real LLM client based on provider name
             try {
-                ChatLanguageModel chatModel = createChatModel(provider);
+                ChatModel chatModel = createChatModel(provider);
                 String maskedKey = maskApiKey(provider.getApiKey());
                 logger.info("Registered REAL LLM client: provider={}, model={}, baseUrl={}, apiKey={}",
                     provider.getName(), provider.getModel(),
@@ -103,7 +103,7 @@ public class DefaultLlmProviderRegistry implements LlmProviderRegistry {
         return prefix + "..." + suffix;
     }
 
-    private ChatLanguageModel createChatModel(LlmProviderConfig provider) {
+    private ChatModel createChatModel(LlmProviderConfig provider) {
         String providerName = provider.getName().toLowerCase();
 
         switch (providerName) {
@@ -119,7 +119,7 @@ public class DefaultLlmProviderRegistry implements LlmProviderRegistry {
         }
     }
 
-    private ChatLanguageModel createAnthropicModel(LlmProviderConfig provider) {
+    private ChatModel createAnthropicModel(LlmProviderConfig provider) {
         AnthropicChatModel.AnthropicChatModelBuilder builder = AnthropicChatModel.builder()
             .apiKey(provider.getApiKey())
             .modelName(provider.getModel())
@@ -133,7 +133,7 @@ public class DefaultLlmProviderRegistry implements LlmProviderRegistry {
         return builder.build();
     }
 
-    private ChatLanguageModel createGeminiModel(LlmProviderConfig provider) {
+    private ChatModel createGeminiModel(LlmProviderConfig provider) {
         // Gemini model creation requires langchain4j-google-ai-gemini dependency
         // For now, throw exception if Gemini is requested without the dependency
         try {
@@ -148,7 +148,7 @@ public class DefaultLlmProviderRegistry implements LlmProviderRegistry {
                 builder.getClass().getMethod("baseUrl", String.class).invoke(builder, provider.getBaseUrl());
             }
 
-            return (ChatLanguageModel) builder.getClass().getMethod("build").invoke(builder);
+            return (ChatModel) builder.getClass().getMethod("build").invoke(builder);
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException("Gemini provider requires langchain4j-google-ai-gemini dependency. " +
                 "Add it to pom.xml or run with -Pllm-providers profile.", e);
@@ -157,7 +157,7 @@ public class DefaultLlmProviderRegistry implements LlmProviderRegistry {
         }
     }
 
-    private ChatLanguageModel createGroqModel(LlmProviderConfig provider) {
+    private ChatModel createGroqModel(LlmProviderConfig provider) {
         // Groq uses OpenAI-compatible API, so we can use the OpenAI client
         try {
             Class<?> openAiClass = Class.forName("dev.langchain4j.model.openai.OpenAiChatModel");
@@ -173,7 +173,7 @@ public class DefaultLlmProviderRegistry implements LlmProviderRegistry {
                 : "https://api.groq.com/openai/v1";
             builder.getClass().getMethod("baseUrl", String.class).invoke(builder, baseUrl);
 
-            return (ChatLanguageModel) builder.getClass().getMethod("build").invoke(builder);
+            return (ChatModel) builder.getClass().getMethod("build").invoke(builder);
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException("Groq provider requires langchain4j-open-ai dependency. " +
                 "Add it to pom.xml or run with -Pllm-providers profile.", e);

@@ -70,23 +70,18 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-core</artifactId>
-            <version>0.35.0</version>
+            <version>1.14.1</version>
         </dependency>
 
         <!-- LangChain4j Anthropic Provider -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-anthropic</artifactId>
-            <version>0.35.0</version>
+            <version>1.14.1</version>
         </dependency>
 
         <!-- Optional provider deps (Gemini/Groq) are gated via Maven profile: -Pllm-providers -->
-        <!-- LangChain4j Spring Boot Starter -->
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-spring-boot-starter</artifactId>
-            <version>0.35.0</version>
-        </dependency>
+        <!-- NOTE: langchain4j-spring-boot-starter removed - not needed, we create clients manually -->
 
         <!-- Testing -->
         <dependency>
@@ -122,14 +117,14 @@
                 <dependency>
                     <groupId>dev.langchain4j</groupId>
                     <artifactId>langchain4j-google-ai-gemini</artifactId>
-                    <version>0.35.0</version>
+                    <version>1.14.1</version>
                 </dependency>
 
                 <!-- LangChain4j Groq Provider -->
                 <dependency>
                     <groupId>dev.langchain4j</groupId>
                     <artifactId>langchain4j-groq</artifactId>
-                    <version>0.35.0</version>
+                    <version>1.14.1</version>
                 </dependency>
             </dependencies>
         </profile>
