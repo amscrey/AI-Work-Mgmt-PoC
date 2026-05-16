@@ -127,9 +127,21 @@ public class DefaultLlmProviderRegistry implements LlmProviderRegistry {
 
     private ChatModel createAnthropicModel(LlmProviderConfig provider) {
         String baseUrl = provider.getBaseUrl();
-        String effectiveBaseUrl = (baseUrl != null && !baseUrl.isBlank()) ? baseUrl : "https://api.anthropic.com/v1 (default)";
+        String effectiveBaseUrl = (baseUrl != null && !baseUrl.isBlank()) ? baseUrl : "https://api.anthropic.com/v1";
 
-        logger.info("Creating Anthropic ChatModel: model={}, baseUrl={}", provider.getModel(), effectiveBaseUrl);
+        logger.info("Creating Anthropic ChatModel: model={}, baseUrl={}", provider.getModel(),
+            (baseUrl != null && !baseUrl.isBlank()) ? baseUrl : effectiveBaseUrl + " (default)");
+
+        // Important: LangChain4j appends "/messages" to the baseUrl
+        String expectedFullUrl = effectiveBaseUrl + "/messages";
+        logger.info("Anthropic API will call: POST {}", expectedFullUrl);
+
+        // Warn if baseUrl doesn't end with /v1 (common configuration error)
+        if (baseUrl != null && !baseUrl.isBlank() && !baseUrl.endsWith("/v1")) {
+            logger.warn("WARNING: baseUrl does not end with '/v1'. Anthropic API calls go to '{baseUrl}/messages'. " +
+                "If your curl works with '{baseUrl}/v1/messages', you should set baseUrl to include /v1. " +
+                "Current baseUrl: {}", baseUrl);
+        }
 
         AnthropicChatModel.AnthropicChatModelBuilder builder = AnthropicChatModel.builder()
             .apiKey(provider.getApiKey())
