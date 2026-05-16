@@ -55,6 +55,7 @@ public class OrchestrationLlmProperties {
     public static class Provider {
         private String apiKey;
         private String model;
+        private String baseUrl;
         private boolean enabled = true;
         private String tokenizerId;
         private String tokenizerVersion;
@@ -73,6 +74,14 @@ public class OrchestrationLlmProperties {
 
         public void setModel(String model) {
             this.model = model;
+        }
+
+        public String getBaseUrl() {
+            return baseUrl;
+        }
+
+        public void setBaseUrl(String baseUrl) {
+            this.baseUrl = baseUrl;
         }
 
         public boolean isEnabled() {

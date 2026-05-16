@@ -18,7 +18,8 @@
       "Bash(/tmp/final_test_fix.sh)",
       "Bash(ls:*)",
       "Bash(jar:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(mvn clean test-compile:*)"
     ]
   }
 }

@@ -19,6 +19,28 @@ public class LlmStartupReportWriter {
         Files.writeString(reportPath, buildReport(summary));
     }
 
+    /**
+     * Masks an API key for safe logging.
+     * Shows first 5 characters and last 4 characters, masks the rest.
+     * Example: "sk-ant-api03-1234567890abcdef" → "sk-an...cdef"
+     *
+     * @param apiKey the API key to mask
+     * @return masked key safe for logging
+     */
+    private String maskApiKey(String apiKey) {
+        if (apiKey == null || apiKey.isBlank()) {
+            return "[NOT SET]";
+        }
+        if (apiKey.length() <= 9) {
+            // Too short to mask safely, just show prefix
+            return apiKey.substring(0, Math.min(5, apiKey.length())) + "...";
+        }
+        // Show first 5 chars, last 4 chars
+        String prefix = apiKey.substring(0, 5);
+        String suffix = apiKey.substring(apiKey.length() - 4);
+        return prefix + "..." + suffix;
+    }
+
     private String buildReport(LlmSummary summary) {
         StringBuilder builder = new StringBuilder();
         builder.append("# LLM Startup Report\n\n");
@@ -28,9 +50,18 @@ public class LlmStartupReportWriter {
         builder.append("## Providers\n\n");
         for (Map.Entry<String, LlmProviderConfig> entry : summary.getProviders().entrySet()) {
             LlmProviderConfig provider = entry.getValue();
+            String maskedKey = maskApiKey(provider.getApiKey());
+            String baseUrl = provider.getBaseUrl() != null && !provider.getBaseUrl().isBlank()
+                ? provider.getBaseUrl()
+                : "default";
+
             builder.append("- ").append(provider.getName())
-                .append(" (model: ").append(provider.getModel()).append(", enabled: ")
-                .append(provider.isEnabled()).append(", dummy: ").append(provider.isDummy()).append(")\n");
+                .append(" (model: ").append(provider.getModel())
+                .append(", apiKey: ").append(maskedKey)
+                .append(", baseUrl: ").append(baseUrl)
+                .append(", enabled: ").append(provider.isEnabled())
+                .append(", dummy: ").append(provider.isDummy())
+                .append(")\n");
         }
 
         builder.append("\n## Role Mappings\n\n");

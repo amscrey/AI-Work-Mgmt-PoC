@@ -53,6 +53,7 @@ public class LlmConfigLoaderImpl implements LlmConfigLoader {
                 providerName,
                 provider.getApiKey(),
                 provider.getModel(),
+                provider.getBaseUrl(),
                 provider.isEnabled(),
                 dummy
             ));

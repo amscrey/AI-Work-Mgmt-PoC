@@ -17,7 +17,7 @@ class DefaultLlmSummaryServiceTest {
     @Test
     void buildsSummaryFromSnapshot() {
         LlmConfigSnapshot snapshot = new LlmConfigSnapshot(
-            Map.of("anthropic", new LlmProviderConfig("anthropic", "key", "claude", true, false)),
+            Map.of("anthropic", new LlmProviderConfig("anthropic", "key", "claude", null, true, false)),
             Map.of("researcher", new LlmRoleMapping("researcher", "anthropic", "claude", null)),
             "anthropic",
             new LlmConfigDiagnostics(null, null)

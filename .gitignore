@@ -40,3 +40,12 @@ target/
 
 ### Mac OS ###
 .DS_Store
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+quickstart/.env
+*.env
+**/secrets.sh
+**/*-secrets.sh

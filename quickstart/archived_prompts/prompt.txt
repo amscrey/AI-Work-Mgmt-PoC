@@ -1,0 +1,89 @@
+- **Game rules overview**
+  - What parts of the original Jaws board game should remain?
+
+Let'ss focus only on Act1 from the original game.  We'll remove the cards.  We'll condense the Hooper and Quint into a single "Boat" role.
+
+We'll leave the board (with modified space setup), the barrels, swimmers, and other playing pieces.
+
+- **Player setup**
+  - Will the game support exactly 2 players, or both 2 and 3 players?
+Both 2 and 3.  One player plays the shark - mandatory.  In a two player game the 2nd player plays both Brody and the Boat - in a 3 player game each is played separately.
+  - If 3 players are supported, how are roles divided?
+- **Platform target**
+  - Web app
+- **Play mode**
+  online multiplayer
+- **Game flow**
+  - Turn-based only
+- **AI support**
+  - only human players for initial launch
+- **Frontend expectations**
+  - Simple functional UI as PoC later , polished game board UI?
+- **Persistence**
+  - Should players be able to save/load games? - not for initial launch
+- **Authentication**
+  - Anonymous play for initial launch
+- **Delivery expectations**
+  - Prototype first, then production version? - yes
+  - Any timeline or milestone expectations? - suggest appropriate milestones
+
+
+Some initial ideas:
+
+Objective
+---------
+Shark:
+Eat enough swimmers to win.
+Humans:
+Save/clear swimmers and use detection/barrels to limit the shark.
+Prevent the shark from reaching its victim target before the round limit.
+
+
+Board markers / game pieces
+---------------------------
+Swimmer markers
+Barrel markers
+Brody pawn
+Boat pawn
+Shark pawn (only used when spotted)
+Radar marker
+Binoculars marker
+
+Board
+-----
+Shore spaces Each of these has land + adjacent sea presence:
+East Beach
+North Beach
+South Beach
+West Beach
+Amity Police Dept. (barrel depot)
+Mayor’s Office
+West Docks (barrel pickup)
+East Docks (barrel pickup)
+
+Open water spaces:
+Open Water North
+Open Water West
+Open Water South
+Open Water East
+
+Setup / Initial placement
+-------------------------
+Brody starts at Amity Police Dept.
+Boat starts at West Docks or East Docks
+Shark starts secretly in any open water space
+
+Turn structure
+--------------
+Each round:
+  Brody takes 3 actions
+  Boat takes 3 actions
+  Shark takes 3 actions
+  Resolve end-of-round swimmer placement / victory check
+
+Barrels
+-------
+Barrels begin in supply at: Amity Police Dept.
+Can be staged at: West Docks, East Docks
+
+

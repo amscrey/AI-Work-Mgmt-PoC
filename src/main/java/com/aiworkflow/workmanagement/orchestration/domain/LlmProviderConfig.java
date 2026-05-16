@@ -7,13 +7,15 @@ public class LlmProviderConfig {
     private final String name;
     private final String apiKey;
     private final String model;
+    private final String baseUrl;
     private final boolean enabled;
     private final boolean dummy;
 
-    public LlmProviderConfig(String name, String apiKey, String model, boolean enabled, boolean dummy) {
+    public LlmProviderConfig(String name, String apiKey, String model, String baseUrl, boolean enabled, boolean dummy) {
         this.name = name;
         this.apiKey = apiKey;
         this.model = model;
+        this.baseUrl = baseUrl;
         this.enabled = enabled;
         this.dummy = dummy;
     }
@@ -28,6 +30,10 @@ public class LlmProviderConfig {
 
     public String getModel() {
         return model;
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
     }
 
     public boolean isEnabled() {

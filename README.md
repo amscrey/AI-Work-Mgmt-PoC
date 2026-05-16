@@ -40,6 +40,17 @@ AI-Work-Mgmt/
 - Writing new tests
 - CI/CD integration
 
+📖 **[quickstart/README.md](quickstart/README.md)** - **Starting the app**
+- How to start with/without LLMs
+- Template, LLM, and Dummy modes
+- Environment variable setup (.env file)
+- Health check and verification
+
+📖 **[CURL-EXAMPLES.md](etc/docs/CURL-EXAMPLES.md)** - **Complete curl examples**
+- All REST API endpoints with working curl commands
+- Stories, tasks, comments, orchestration, usage
+- Common workflows and error handling
+
 📖 **[REST-API.md](etc/docs/REST-API.md)** - API conventions and error payloads
 
 ## Workspace Configuration

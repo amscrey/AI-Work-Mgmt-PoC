@@ -18,7 +18,7 @@ class DefaultLlmRoleMappingResolverTest {
     @Test
     void resolvesRoleWithPrecedence() {
         LlmConfigSnapshot snapshot = new LlmConfigSnapshot(
-            Map.of("anthropic", new LlmProviderConfig("anthropic", "key", "claude", true, false)),
+            Map.of("anthropic", new LlmProviderConfig("anthropic", "key", "claude", null, true, false)),
             Map.of("researcher", new LlmRoleMapping("researcher", "anthropic", "claude", List.of("dummy"))),
             "anthropic",
             new LlmConfigDiagnostics(null, null)

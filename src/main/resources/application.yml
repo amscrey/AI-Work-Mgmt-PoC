@@ -29,15 +29,18 @@ orchestration:
     providers:
       anthropic:
         api-key: ${ANTHROPIC_API_KEY:}
-        model: claude-3-5-sonnet-20241022
+        base-url: ${ANTHROPIC_BASE_URL:}
+        model: ${MODEL_ANTHROPIC:claude-4.5-sonnet}
       gemini:
         api-key: ${GEMINI_API_KEY:}
-        model: gemini-2.0-flash
+        base-url: ${GEMINI_BASE_URL:}
+        model: ${MODEL_GEMINI:gemini-2.0-flash}
       groq:
         api-key: ${GROQ_API_KEY:}
-        model: gpt-j
+        base-url: ${GROQ_BASE_URL:}
+        model: ${MODEL_GROQ:llama-3.3-70b-versatile}
       dummy:
-        model: file-bridge
+        model: ${MODEL_DUMMY:file-bridge}
     dummy-providers: [dummy]
 
 # Logging configuration

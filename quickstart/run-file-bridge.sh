@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Source .env file if it exists (for local development with secrets)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/.env" ]; then
+  echo "Loading environment variables from .env..."
+  source "$SCRIPT_DIR/.env"
+fi
+
 WORKSPACE_ROOT=${WORKSPACE_ROOT:-$(pwd)/AI-Work-Mgmt-LLM-Orch-AddOn}
 WORKSPACE_NAME=${WORKSPACE_NAME:-workspace}
 BRIDGE_ROOT=${BRIDGE_ROOT:-$WORKSPACE_ROOT/dummy-bridge}
