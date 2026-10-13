@@ -16,7 +16,9 @@ import com.aiworkflow.workmanagement.orchestration.service.OrchestrationService;
 import com.aiworkflow.workmanagement.orchestration.service.StoryTokenUsageService;
 import com.aiworkflow.workmanagement.application.command.CreateCommentCommand;
 import com.aiworkflow.workmanagement.application.service.CommentService;
+import com.aiworkflow.workmanagement.application.service.ProjectPlanningService;
 import com.aiworkflow.workmanagement.domain.model.CommentType;
+import com.aiworkflow.workmanagement.domain.model.Story;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -49,17 +51,20 @@ public class OrchestrationController {
     private final OrchestrationRunRegistry runRegistry;
     private final StoryTokenUsageService tokenUsageService;
     private final CommentService commentService;
+    private final ProjectPlanningService projectPlanningService;
 
     public OrchestrationController(
         OrchestrationService orchestrationService,
         OrchestrationRunRegistry runRegistry,
         StoryTokenUsageService tokenUsageService,
-        CommentService commentService
+        CommentService commentService,
+        ProjectPlanningService projectPlanningService
     ) {
         this.orchestrationService = orchestrationService;
         this.runRegistry = runRegistry;
         this.tokenUsageService = tokenUsageService;
         this.commentService = commentService;
+        this.projectPlanningService = projectPlanningService;
     }
 
     @PostMapping("/orchestration/runs")
@@ -68,7 +73,16 @@ public class OrchestrationController {
         OrchestrationResult result = orchestrationService.orchestrate(orchestrationRequest);
         String storyId = resolveStoryId(request.getStoryId());
         runRegistry.record(storyId, result);
-        AssistantResponse assistantResponse = buildAssistantResponse(result, storyId);
+
+        // Auto-create stories from PROJECT-PLANNING if requested
+        List<Story> createdStories = autoCreateStoriesIfRequested(
+            request.getWorkIntent(),
+            request.getRequestedBy(),
+            request.getStoryId(),
+            result
+        );
+
+        AssistantResponse assistantResponse = buildAssistantResponse(result, storyId, createdStories);
         OrchestrationRunResponse response = new OrchestrationRunResponse(
             result.getExecutionId(),
             "COMPLETED",
@@ -88,7 +102,11 @@ public class OrchestrationController {
         OrchestrationResult result = orchestrationService.orchestrate(orchestrationRequest);
         String resolvedStoryId = resolveStoryId(storyId);
         runRegistry.record(resolvedStoryId, result);
-        AssistantResponse assistantResponse = buildAssistantResponse(result, resolvedStoryId);
+
+        // Auto-create stories from PROJECT-PLANNING if requested
+        List<Story> createdStories = autoCreateStoriesIfRequested(prompt, requestedBy, storyId, result);
+
+        AssistantResponse assistantResponse = buildAssistantResponse(result, resolvedStoryId, createdStories);
         OrchestrationRunResponse response = new OrchestrationRunResponse(
             result.getExecutionId(),
             "COMPLETED",
@@ -116,6 +134,52 @@ public class OrchestrationController {
     public ResponseEntity<StoryUsageSummaryResponse> getStoryUsage(@PathVariable String storyId) {
         return ResponseEntity.ok(StoryUsageSummaryResponse.from(tokenUsageService.getSummary(new StoryId(storyId))));
     }
+
+    /**
+     * Gets story suggestions from PROJECT-PLANNING artifacts without creating them.
+     */
+    @GetMapping("/project-planning/suggestions")
+    public ResponseEntity<List<ProjectPlanningService.StorySuggestion>> getStorySuggestions() {
+        List<ProjectPlanningService.StorySuggestion> suggestions = projectPlanningService.parseStorySuggestions();
+        return ResponseEntity.ok(suggestions);
+    }
+
+    /**
+     * Creates stories from PROJECT-PLANNING artifacts.
+     * <p>
+     * This parses PROJECT-PLANNING artifacts for story suggestions and creates
+     * corresponding stories in the backlog.
+     *
+     * @param requestedBy who requested the story creation
+     * @return list of created stories
+     */
+    @PostMapping("/project-planning/create-stories")
+    public ResponseEntity<List<StoryCreatedResponse>> createStoriesFromPlanning(
+        @RequestParam String requestedBy
+    ) {
+        List<Story> createdStories = projectPlanningService.createStoriesFromPlanning(requestedBy);
+
+        List<StoryCreatedResponse> response = createdStories.stream()
+            .map(story -> new StoryCreatedResponse(
+                story.getId().getValue(),
+                story.getTitle(),
+                story.getSummary(),
+                story.getPrioritizationState().name()
+            ))
+            .collect(Collectors.toList());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Response DTO for created stories.
+     */
+    public record StoryCreatedResponse(
+        String storyId,
+        String title,
+        String summary,
+        String prioritizationState
+    ) {}
 
     private OrchestrationRequest buildRequest(OrchestrationRunRequest request) {
         if (request.getStoryId() == null || request.getStoryId().isBlank()) {
@@ -158,6 +222,10 @@ public class OrchestrationController {
     }
 
     private AssistantResponse buildAssistantResponse(OrchestrationResult result, String storyId) {
+        return buildAssistantResponse(result, storyId, List.of());
+    }
+
+    private AssistantResponse buildAssistantResponse(OrchestrationResult result, String storyId, List<Story> createdStories) {
         List<AssistantReference> references = new ArrayList<>();
         List<String> highlights = new ArrayList<>();
 
@@ -168,6 +236,14 @@ public class OrchestrationController {
             highlights.add("Errors: " + String.join("; ", result.getErrors()));
         }
 
+        // Add highlight for auto-created stories
+        if (!createdStories.isEmpty()) {
+            highlights.add("Created " + createdStories.size() + " stories in backlog: " +
+                createdStories.stream()
+                    .map(s -> s.getId().getValue())
+                    .collect(Collectors.joining(", ")));
+        }
+
         for (ArtifactReference artifact : result.getArtifacts()) {
             references.add(new AssistantReference(
                 "artifact",
@@ -176,6 +252,18 @@ public class OrchestrationController {
                 artifact.getName(),
                 artifact.getCreatedBy(),
                 artifact.getCreatedAt()
+            ));
+        }
+
+        // Add references for created stories
+        for (Story story : createdStories) {
+            references.add(new AssistantReference(
+                "story",
+                story.getId().getValue(),
+                null,
+                story.getTitle(),
+                "orchestrator",
+                Instant.now()
             ));
         }
 
@@ -193,6 +281,64 @@ public class OrchestrationController {
 
         String summary = summarize(result.getExecutionSummary());
         return new AssistantResponse("markdown", summary, highlights, references);
+    }
+
+    /**
+     * Automatically creates stories from PROJECT-PLANNING artifacts when story creation is requested.
+     *
+     * @param prompt the user's prompt
+     * @param requestedBy who requested the orchestration
+     * @param storyId the story ID (null for PROJECT-PLANNING)
+     * @param result the orchestration result
+     * @return list of created stories (empty if none created)
+     */
+    private List<Story> autoCreateStoriesIfRequested(
+        String prompt,
+        String requestedBy,
+        String storyId,
+        OrchestrationResult result
+    ) {
+        // Only auto-create for PROJECT-PLANNING (no storyId provided)
+        if (storyId != null && !storyId.isBlank()) {
+            return List.of();
+        }
+
+        // Only auto-create if orchestration was successful and produced artifacts
+        if (!result.isSuccess() || result.getArtifacts().isEmpty()) {
+            return List.of();
+        }
+
+        // Check if prompt indicates story creation is desired
+        if (!shouldCreateStories(prompt)) {
+            return List.of();
+        }
+
+        // Create stories from PROJECT-PLANNING artifacts
+        return projectPlanningService.createStoriesFromPlanning(requestedBy);
+    }
+
+    /**
+     * Checks if the prompt indicates story creation is desired.
+     * Looks for keywords like "create stories", "generate stories", etc.
+     */
+    private boolean shouldCreateStories(String prompt) {
+        if (prompt == null || prompt.isBlank()) {
+            return false;
+        }
+
+        String lowerPrompt = prompt.toLowerCase();
+
+        // Check for explicit story creation intent
+        return lowerPrompt.contains("create stor") ||
+               lowerPrompt.contains("generate stor") ||
+               lowerPrompt.contains("make stor") ||
+               lowerPrompt.contains("suggest stor") ||
+               lowerPrompt.contains("define stor") ||
+               lowerPrompt.contains("stories for") ||
+               lowerPrompt.contains("story backlog") ||
+               lowerPrompt.contains("initial stories") ||
+               lowerPrompt.contains("plan stories") ||
+               lowerPrompt.contains("identify stories");
     }
 
     private String createResponseComment(OrchestrationResult result, String storyId) {

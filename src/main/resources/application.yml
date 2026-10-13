@@ -1,8 +1,14 @@
 # AI Work Management Platform Configuration
+#
+# Workspace Configuration:
+# - workspace-root: Full path to your <workspace> directory (e.g., /path/to/my-project-workspace)
+#   This is where backlog/, prioritized/, done/, and activity-log/ directories are created.
+#   Do NOT name this directory "workspace" - use a descriptive project name.
+# - workspace-name: Display name (optional, defaults to the directory name from workspace-root)
 
 workmanagement:
-  workspace-root: ${WORKSPACE_ROOT:AI-Work-Mgmt-LLM-Orch-AddOn}
-  workspace-name: ${WORKSPACE_NAME:workspace}
+  workspace-root: ${WORKSPACE_ROOT:AI-Assisted-Projects}
+  workspace-name: ${WORKSPACE_NAME:}
 
 orchestration:
   # Execution mode: "template" (deterministic, no LLM) or "llm" (real Claude API calls)
@@ -29,7 +35,7 @@ orchestration:
     providers:
       anthropic:
         api-key: ${ANTHROPIC_API_KEY:}
-        base-url: ${ANTHROPIC_BASE_URL:}
+        base-url: ${ANTHROPIC_BASE_URL:}/v1
         model: ${MODEL_ANTHROPIC:claude-4.5-sonnet}
       gemini:
         api-key: ${GEMINI_API_KEY:}
@@ -53,8 +59,8 @@ logging:
     dev.langchain4j: DEBUG
     dev.langchain4j.model.anthropic: DEBUG
     # Enable Java HTTP client logging to see full requests
-    jdk.httpclient: TRACE
-    jdk.internal.httpclient: TRACE
+#    jdk.httpclient: TRACE
+#    jdk.internal.httpclient: TRACE
 
 # Spring Boot configuration
 spring:

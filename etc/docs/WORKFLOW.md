@@ -53,7 +53,7 @@ curl -X POST http://localhost:8080/api/v1/orchestration/prompt \
 
 **Directory Structure**:
 ```
-workspace/
+<workspace>/
 ├── prioritized/
 │   └── PROJECT-PLANNING/         # Project-level artifacts
 │       ├── story.json
@@ -104,10 +104,12 @@ TODO → IN_PROGRESS → DONE
 
 **CRITICAL: Directory location = Source of Truth**
 
-Stories MUST reside in directories matching their state:
+Stories MUST reside in directories matching their state.
+
+> **Terminology**: `<workspace>` refers to your project's workspace directory (e.g., `expandedStoryMgr`, `inventory-system`). This is NOT a literal directory named "workspace" - it's whatever you named your workspace when configuring the app.
 
 ```
-workspace/
+<workspace>/
 ├── backlog/         # prioritizationState: BACKLOG
 │   └── STORY-XXX/
 │       ├── story.json

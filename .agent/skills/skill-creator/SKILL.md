@@ -171,3 +171,16 @@ Skills created with this tool work across all major platforms:
 6. **NEVER** hardcode absolute paths in skill content
 7. **NEVER** skip the validation checklist
 8. **ALWAYS** use English for all skill content
+
+---
+
+## Script (Deterministic Operation)
+
+Use this script for initial directory scaffolding:
+
+```bash
+./scripts/scaffold-skill.sh <skill-name>
+# Example: ./scripts/scaffold-skill.sh code-review
+```
+
+This creates the skill directory with a template SKILL.md that you then customize based on the interview.

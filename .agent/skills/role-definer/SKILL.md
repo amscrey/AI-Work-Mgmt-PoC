@@ -1,6 +1,7 @@
 ---
 name: role-definer
 description: Define workflow roles for AI agents in work management systems. Use when creating role definitions, mapping responsibilities to roles, defining role authorities, or establishing role-based file naming conventions.
+user-invocable: false
 ---
 
 # Role Definer
@@ -258,3 +259,16 @@ Define clear authority boundaries:
 10. **NEVER** create overlapping authority without justification
 11. **ALWAYS** distinguish between roles (who) and skills (how)
 12. **ALWAYS** make role definitions implementation-agnostic (any LLM can assume the role)
+
+---
+
+## Script (Deterministic Operation)
+
+Use this script for initial directory scaffolding:
+
+```bash
+./scripts/scaffold-role.sh <role-name>
+# Example: ./scripts/scaffold-role.sh code-reviewer
+```
+
+This creates the role directory with a template ROLE.md that you then customize based on the interview.

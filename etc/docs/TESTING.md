@@ -100,10 +100,27 @@ src/test/java/com/aiworkflow/workmanagement/
 ├── infrastructure/
 │   └── persistence/
 │       ├── FileBasedStoryRepositoryIT.java
+│       │   ├── SaveAndFindTests
+│       │   ├── QueryTests
+│       │   ├── DeleteTests
+│       │   ├── ExistsTests
+│       │   ├── PersistenceTests
+│       │   └── ArtifactLoadingTests      # Tests artifact loading on findById
 │       ├── FileBasedTaskRepositoryIT.java
 │       ├── FileBasedCommentRepositoryIT.java
 │       ├── FileBasedActivityLoggerIT.java
 │       └── WorkspaceVerificationIT.java
+│
+├── orchestration/
+│   ├── graph/
+│   │   └── StateGraphBuilderTest.java    # Tests node execution and artifact accumulation
+│   └── llm/
+│       ├── DummyChatClientTest.java
+│       ├── RealLlmChatClientTest.java
+│       └── LlmProviderIntegrationIT.java
+│
+├── api/
+│   └── OrchestrationControllerTest.java  # WebMvcTest with mocked services
 │
 └── e2e/
     └── WorkflowEndToEndIT.java
@@ -187,7 +204,7 @@ Integration tests use isolated test workspaces in the `target/` directory to avo
 
 | Test Suite | Workspace Directory | Purpose |
 |------------|---------------------|---------|
-| FileBasedStoryRepositoryIT | `target/test-workspace-story` | Story persistence testing |
+| FileBasedStoryRepositoryIT | `target/test-workspace-story` | Story persistence + artifact loading |
 | FileBasedTaskRepositoryIT | `target/test-workspace-task` | Task persistence testing |
 | FileBasedCommentRepositoryIT | `target/test-workspace-comment` | Comment persistence testing |
 | FileBasedActivityLoggerIT | `target/test-workspace-activity-log` | Activity logging testing |
@@ -307,6 +324,17 @@ target/test-workspace-{repository}/
 - Multiple comments per story
 - Entity independence (updates don't affect other entities)
 
+✅ **Artifact Loading (FileBasedStoryRepositoryIT):**
+- Artifacts loaded from `{storyDir}/artifacts/` on `findById()`
+- Artifact files must match naming pattern: `{name}__{role}__{timestamp}.{ext}`
+- Invalid artifact files are ignored (logged as warning)
+- Missing artifacts directory handled gracefully (empty list)
+
+✅ **Orchestration Tests (StateGraphBuilderTest):**
+- Node execution and state conversion (OrchestrationState ↔ AgentState)
+- Artifact accumulation across nodes using Appender reducer
+- Comment creation on node start/complete (when CommentService provided)
+
 **What's NOT Tested in Integration Tests:**
 
 ❌ Business logic (covered by unit tests)
@@ -325,7 +353,32 @@ target/test-workspace-{repository}/
 >
 > This ensures both human and AI developers understand the test coverage.
 
-#### 3. All Tests (run by default)
+#### 3. Orchestration Tests
+
+```bash
+# All orchestration-related tests
+mvn test -Dtest='**/orchestration/**'
+
+# StateGraphBuilder tests (node execution, artifact accumulation)
+mvn test -Dtest=StateGraphBuilderTest
+
+# LLM provider tests
+mvn test -Dtest=LlmProviderIntegrationIT
+
+# Orchestration controller tests
+mvn test -Dtest=OrchestrationControllerTest
+```
+
+**Orchestration Test Coverage:**
+
+| Test Class | Purpose |
+|------------|---------|
+| StateGraphBuilderTest | Node execution, artifact accumulation, comment creation |
+| LlmProviderIntegrationIT | LLM provider routing, dummy/real client selection |
+| OrchestrationControllerTest | REST endpoints, request/response handling |
+| DummyChatClientTest | File-bridge and fixture modes for testing |
+
+#### 4. All Tests (run by default)
 
 ```bash
 # Run everything (unit + integration + E2E)
@@ -898,6 +951,25 @@ open target/site/jacoco/index.html
 
 ---
 
-**Last Updated**: 2026-04-05
-**Test Count**: see latest `mvn verify` output
+**Last Updated**: 2026-05-16
+**Test Count**: ~564 tests (see latest `mvn verify` output)
 **Coverage**: ≥ 80% (JaCoCo check)
+
+---
+
+## Recent Test Additions (2026-05-16)
+
+### Artifact Loading Tests
+- `FileBasedStoryRepositoryIT.ArtifactLoadingTests` - 3 tests verifying:
+  - Artifacts loaded when retrieving story via `findById()`
+  - Non-artifact files in artifacts directory are ignored
+  - Missing artifacts directory handled gracefully
+
+### Orchestration Comment Tests
+- `StateGraphBuilder` now creates comments when nodes start/complete
+- Tests verify comment creation is skipped gracefully when `CommentService` is null
+- Integration with `CommentService` for agent progress tracking
+
+### Controller Test Updates
+- `OrchestrationControllerTest` now mocks `ProjectPlanningService`
+- Tests cover new `/api/v1/project-planning/*` endpoints

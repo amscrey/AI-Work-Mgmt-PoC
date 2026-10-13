@@ -1,3 +1,9 @@
+---
+name: scrum-process-designer
+description: Define a Scrum-inspired work management process that AI agents can execute consistently. Translates human delivery practices into explicit, file-driven workflow rules.
+user-invocable: false
+---
+
 # Skill: Scrum Process Designer
 
 ## Purpose

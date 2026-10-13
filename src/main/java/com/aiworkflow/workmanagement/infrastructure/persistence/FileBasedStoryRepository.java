@@ -1,13 +1,19 @@
 package com.aiworkflow.workmanagement.infrastructure.persistence;
 
+import com.aiworkflow.workmanagement.domain.model.Artifact;
+import com.aiworkflow.workmanagement.domain.model.Comment;
 import com.aiworkflow.workmanagement.domain.model.PrioritizationState;
 import com.aiworkflow.workmanagement.domain.model.Story;
 import com.aiworkflow.workmanagement.domain.model.WorkflowState;
+import com.aiworkflow.workmanagement.domain.repository.CommentRepository;
 import com.aiworkflow.workmanagement.domain.repository.StoryRepository;
+import com.aiworkflow.workmanagement.domain.valueobject.ArtifactName;
 import com.aiworkflow.workmanagement.domain.valueobject.StoryId;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -18,12 +24,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * File-based implementation of StoryRepository.
  * Stores stories as JSON files in a directory structure organized by prioritization state.
+ *
+ * <p>This implementation loads artifacts and comments when retrieving stories,
+ * ensuring the full Story aggregate is available for orchestration context.
  *
  * Directory structure:
  * workspace/
@@ -32,19 +42,44 @@ import java.util.stream.Stream;
  *       story.json
  *       tasks/
  *       comments/
+ *       artifacts/
  *   prioritized/    (contains PRIORITIZED stories)
  *     STORY-002/
  *       story.json
  *       tasks/
  *       comments/
+ *       artifacts/
  */
 public class FileBasedStoryRepository implements StoryRepository {
 
+    private static final Logger logger = LoggerFactory.getLogger(FileBasedStoryRepository.class);
+
+    // Pattern for artifact filenames: {name}__{role}__{timestamp}.{ext}
+    private static final Pattern ARTIFACT_FILENAME_PATTERN = Pattern.compile(
+        "^[a-z0-9]+(-[a-z0-9]+)*__[a-z]+(-[a-z]+)*__\\d{4}-\\d{2}-\\d{2}T\\d{6}Z\\..+$"
+    );
+
     private final Path workspaceRoot;
     private final ObjectMapper objectMapper;
+    private final CommentRepository commentRepository;
 
+    /**
+     * Creates a repository without comment loading capability.
+     * Used primarily for testing and backward compatibility.
+     */
     public FileBasedStoryRepository(String workspaceRootPath) {
+        this(workspaceRootPath, null);
+    }
+
+    /**
+     * Creates a repository with full artifact and comment loading capability.
+     *
+     * @param workspaceRootPath path to workspace root
+     * @param commentRepository repository for loading comments (nullable)
+     */
+    public FileBasedStoryRepository(String workspaceRootPath, CommentRepository commentRepository) {
         this.workspaceRoot = Paths.get(workspaceRootPath);
+        this.commentRepository = commentRepository;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
         this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -91,14 +126,20 @@ public class FileBasedStoryRepository implements StoryRepository {
         try {
             // Search in all prioritization directories
             for (PrioritizationState state : PrioritizationState.values()) {
-                Path storyFile = workspaceRoot
+                Path storyDir = workspaceRoot
                     .resolve(state.getDirectoryName())
-                    .resolve(id.getValue())
-                    .resolve("story.json");
+                    .resolve(id.getValue());
+                Path storyFile = storyDir.resolve("story.json");
 
                 if (Files.exists(storyFile)) {
                     StoryDTO dto = objectMapper.readValue(storyFile.toFile(), StoryDTO.class);
-                    return Optional.of(dto.toDomain());
+                    Story story = dto.toDomain();
+
+                    // Load artifacts and comments
+                    loadArtifacts(story, storyDir);
+                    loadComments(story);
+
+                    return Optional.of(story);
                 }
             }
 
@@ -251,6 +292,75 @@ public class FileBasedStoryRepository implements StoryRepository {
     private Path getStoryDirectory(Story story) {
         String prioritizationDir = story.getPrioritizationState().getDirectoryName();
         return workspaceRoot.resolve(prioritizationDir).resolve(story.getId().getValue());
+    }
+
+    /**
+     * Loads artifacts from the story's artifacts directory and adds them to the story.
+     * Artifacts are stored as files following the naming convention: {name}__{role}__{timestamp}.{ext}
+     */
+    private void loadArtifacts(Story story, Path storyDir) {
+        Path artifactsDir = storyDir.resolve("artifacts");
+
+        if (!Files.exists(artifactsDir) || !Files.isDirectory(artifactsDir)) {
+            logger.debug("No artifacts directory for story {}", story.getId().getValue());
+            return;
+        }
+
+        try (Stream<Path> artifactFiles = Files.list(artifactsDir)) {
+            artifactFiles
+                .filter(Files::isRegularFile)
+                .forEach(artifactPath -> {
+                    String filename = artifactPath.getFileName().toString();
+
+                    // Only load files matching the artifact naming pattern
+                    if (ARTIFACT_FILENAME_PATTERN.matcher(filename).matches()) {
+                        try {
+                            ArtifactName artifactName = new ArtifactName(filename);
+                            Artifact artifact = new Artifact(
+                                artifactName,
+                                story.getId(),
+                                artifactPath,
+                                artifactName.getRole()
+                            );
+                            story.addArtifact(artifact);
+                            logger.debug("Loaded artifact {} for story {}",
+                                filename, story.getId().getValue());
+                        } catch (IllegalArgumentException e) {
+                            logger.warn("Skipping invalid artifact file: {} - {}",
+                                filename, e.getMessage());
+                        }
+                    } else {
+                        logger.debug("Skipping non-artifact file: {}", filename);
+                    }
+                });
+        } catch (IOException e) {
+            logger.warn("Failed to load artifacts for story {}: {}",
+                story.getId().getValue(), e.getMessage());
+        }
+    }
+
+    /**
+     * Loads comments from the comment repository and adds them to the story.
+     * Requires commentRepository to be configured.
+     */
+    private void loadComments(Story story) {
+        if (commentRepository == null) {
+            logger.debug("CommentRepository not configured, skipping comment loading for story {}",
+                story.getId().getValue());
+            return;
+        }
+
+        try {
+            List<Comment> comments = commentRepository.findByStoryId(story.getId());
+            for (Comment comment : comments) {
+                story.addComment(comment);
+            }
+            logger.debug("Loaded {} comments for story {}",
+                comments.size(), story.getId().getValue());
+        } catch (Exception e) {
+            logger.warn("Failed to load comments for story {}: {}",
+                story.getId().getValue(), e.getMessage());
+        }
     }
 
     /**

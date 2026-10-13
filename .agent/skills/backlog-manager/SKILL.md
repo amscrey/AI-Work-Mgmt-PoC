@@ -1,3 +1,9 @@
+---
+name: backlog-manager
+description: Manage decomposition and quality of the project backlog. Turns goals into structured work items such as initiatives, epics, stories, tasks, and bugs.
+user-invocable: false
+---
+
 # Skill: Backlog Manager
 
 > NOTE: Use `.agent/process/filesystem-contract.md` (human) and `.agent/process/filesystem-contract.json` (machine) as the canonical source for directory ↔ state mappings and prioritization movement rules.

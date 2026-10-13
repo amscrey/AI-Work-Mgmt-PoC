@@ -90,10 +90,16 @@ export ANTHROPIC_BASE_URL=https://ai-model-proxy.aks-ur-prd-internal.8451.cloud
 
 ### Key Domain Concepts
 
-**Story Workflow States**
-- Backlog: PRIORITIZED (ready for work)
-- Active Work: IN_PROGRESS, IN_REVIEW, BLOCKED
-- Terminal: DONE, CANCELLED
+**Story Prioritization States** (determines directory location)
+- BACKLOG - Story created but not approved for work (in `backlog/`)
+- PRIORITIZED - Story approved and ready for work (in `prioritized/`)
+
+**Story Workflow States** (execution status)
+- TODO - Ready to start (default)
+- IN_PROGRESS - Work actively happening
+- AWAITING_APPROVAL - Work completed by implementer, awaiting human approval
+- BLOCKED - Waiting on dependency/decision
+- DONE - Work completed and approved (moved to `done/`)
 
 **Task States**
 - TODO, IN_PROGRESS, DONE, CANCELLED
@@ -106,24 +112,31 @@ export ANTHROPIC_BASE_URL=https://ai-model-proxy.aks-ur-prd-internal.8451.cloud
 ### Persistence Strategy
 
 **File Structure** (workspace-based)
+
+`WORKSPACE_ROOT` points directly to your project workspace (e.g., `/path/to/my-project`).
+Do NOT name this directory "workspace" - use a descriptive project name.
+
 ```
-{WORKSPACE_ROOT}/{workspace-name}/
-├── stories/
-│   ├── prioritized/
-│   │   └── {story-id}.md          # Markdown with YAML frontmatter
-│   ├── in-progress/
-│   └── done/
-├── tasks/
-│   └── {task-id}.json             # JSON format
-├── comments/
-│   └── {parent-id}/
-│       └── {comment-id}.json      # JSON format
-├── artifacts/
-│   └── {story-id}/
-│       └── {artifact-name}        # Various formats
-└── logs/
-    └── activity/
-        └── {role-name}.jsonl      # JSON Lines per role
+{WORKSPACE_ROOT}/                    # Your workspace root (e.g., expandedStoryMgr)
+├── backlog/                         # prioritizationState: BACKLOG
+│   └── STORY-XXX/
+│       ├── story.json
+│       ├── artifacts/
+│       └── comments/
+├── prioritized/                     # prioritizationState: PRIORITIZED
+│   ├── PROJECT-PLANNING/            # Special reserved story for project-level work
+│   │   ├── story.json
+│   │   ├── artifacts/               # Requirements analysis, story suggestions
+│   │   └── comments/
+│   └── STORY-YYY/
+│       ├── story.json
+│       ├── artifacts/
+│       └── comments/
+├── done/                            # workflowState: DONE
+│   └── STORY-ZZZ/
+│       └── ...
+└── activity-log/                    # JSON Lines per event type
+    └── *.jsonl
 ```
 
 **Data Formats**
@@ -169,9 +182,13 @@ Workspaces are cleaned before each test and preserved after for inspection.
 ## Important Configuration
 
 **Environment Variables**
-- `WORKSPACE_ROOT` - Base directory for workspace data (default: `AI-Work-Mgmt-LLM-Orch-AddOn`)
-- `WORKSPACE_NAME` - Workspace subdirectory name (default: `workspace`)
+- `WORKSPACE_ROOT` - Full path to workspace directory (default: `AI-Assisted-Projects`)
+  - This is your project workspace - backlog/, prioritized/, done/ are created directly here
+  - Do NOT name this directory "workspace" - use a descriptive project name
+- `WORKSPACE_NAME` - Display name only (optional, defaults to directory name from WORKSPACE_ROOT)
+  - This does NOT create a subdirectory, just a friendly name for logging
 - `ANTHROPIC_API_KEY` - Required for LLM mode
+- `ANTHROPIC_BASE_URL` - Optional override for corporate proxy
 - `GEMINI_API_KEY` - Optional (Gemini provider)
 - `GROQ_API_KEY` - Optional (Groq provider)
 
@@ -234,6 +251,32 @@ Workspaces are cleaned before each test and preserved after for inspection.
 4. Activity logging
 5. State transition (conditional edges based on outcomes)
 
+### PROJECT-PLANNING Workflow
+- `PROJECT-PLANNING` is a special reserved story ID for project-level work
+- When no storyId is provided to `/api/v1/orchestration/prompt`, routes to PROJECT-PLANNING
+- Used for: requirements analysis, story ideation, architecture planning
+- Artifacts stored in `prioritized/PROJECT-PLANNING/artifacts/`
+- Auto-story creation: When prompt contains "create stories" (or similar keywords), stories are automatically parsed from artifacts and created in backlog
+
+### Orchestration Endpoints
+```bash
+# Project-level planning (routes to PROJECT-PLANNING)
+curl -X POST 'http://localhost:8080/api/v1/orchestration/prompt?requestedBy=human' \
+  -H 'Content-Type: text/plain' \
+  --data 'Analyze requirements and create stories for inventory system'
+
+# Story-specific work
+curl -X POST 'http://localhost:8080/api/v1/orchestration/prompt?requestedBy=human&storyId=STORY-101' \
+  -H 'Content-Type: text/plain' \
+  --data 'Implement the CRUD operations'
+
+# View story suggestions from PROJECT-PLANNING
+curl http://localhost:8080/api/v1/project-planning/suggestions
+
+# Manually create stories from PROJECT-PLANNING artifacts
+curl -X POST 'http://localhost:8080/api/v1/project-planning/create-stories?requestedBy=human'
+```
+
 ### LLM Provider Abstraction
 - `LLMChatClient` interface abstracts provider details
 - `RoutingLlmChatClient` routes to configured provider
@@ -262,6 +305,18 @@ Workspaces are cleaned before each test and preserved after for inspection.
 5. Update TESTING.md if adding integration tests
 6. Create phase completion doc for major features
 7. Run full test suite before committing: `mvn verify`
+
+## Agent Skills
+
+**agile-worker** (`.agent/skills/agile-worker/SKILL.md`)
+- Enforces proper agile workflow for story lifecycle management
+- Key rules:
+  - Never work on BACKLOG stories - must be PRIORITIZED first
+  - Check dependencies before starting work
+  - Log activities: work_started, milestone_reached, blocked, work_completed
+  - Add comments for decisions and progress
+  - After completing work: set workflowState to AWAITING-APPROVAL, not DONE
+  - DONE state requires human approval via orchestrator
 
 ## Common Pitfalls
 

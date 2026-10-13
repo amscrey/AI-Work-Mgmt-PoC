@@ -31,16 +31,23 @@ public class WorkManagementConfig {
     @Bean
     public WorkspaceConfig workspaceConfig(
         @Value("${workmanagement.workspace-root:AI-Work-Mgmt-LLM-Orch-AddOn}") String workspaceRoot,
-        @Value("${workmanagement.workspace-name:workspace}") String workspaceName
+        @Value("${workmanagement.workspace-name:}") String workspaceName
     ) {
-        String normalizedName = workspaceName == null || workspaceName.isBlank() ? "workspace" : workspaceName.trim();
-        Path root = Paths.get(workspaceRoot).resolve(normalizedName).toAbsolutePath().normalize();
-        return new WorkspaceConfig(root, normalizedName);
+        // workspace-root is the full path to the workspace directory
+        // workspace-name is just a display name (does NOT create subdirectory)
+        Path root = Paths.get(workspaceRoot).toAbsolutePath().normalize();
+        String displayName = workspaceName == null || workspaceName.isBlank()
+            ? root.getFileName().toString()  // Use directory name as display name
+            : workspaceName.trim();
+        return new WorkspaceConfig(root, displayName);
     }
 
     @Bean
-    public StoryRepository storyRepository(WorkspaceConfig workspaceConfig) {
-        return new FileBasedStoryRepository(workspaceConfig.getWorkspaceRoot().toString());
+    public StoryRepository storyRepository(WorkspaceConfig workspaceConfig, CommentRepository commentRepository) {
+        return new FileBasedStoryRepository(
+            workspaceConfig.getWorkspaceRoot().toString(),
+            commentRepository
+        );
     }
 
     @Bean

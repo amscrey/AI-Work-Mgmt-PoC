@@ -1,3 +1,9 @@
+---
+name: artifact-governance-lead
+description: Define and enforce the artifact model for AI-managed delivery. Determines which files must exist, naming conventions, folder structure, and traceability requirements.
+user-invocable: false
+---
+
 # Skill: Artifact Governance Lead
 
 ## Purpose

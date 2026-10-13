@@ -1,6 +1,7 @@
 ---
 name: workspace-initializer
 description: Initialize and validate external filesystem workspace structures for AI-managed work items. Use when creating new managed workspaces, validating existing workspace integrity, or detecting structural violations.
+disable-model-invocation: true
 ---
 
 # Workspace Initializer
@@ -117,3 +118,20 @@ When validation fails and repair mode is enabled:
 6. **NEVER** delete existing work items during initialization or validation
 7. **NEVER** create workspace inside core project repository
 8. **NEVER** proceed if critical permission issues exist
+
+---
+
+## Script (Deterministic Operation)
+
+Use this script for workspace initialization:
+
+```bash
+./scripts/init-workspace.sh <workspace-root>
+# Example: ./scripts/init-workspace.sh /path/to/my-project-workspace
+```
+
+This creates the standard directory structure:
+- `backlog/` - Stories with prioritizationState: BACKLOG
+- `prioritized/` - Stories with prioritizationState: PRIORITIZED
+- `done/` - Stories with workflowState: DONE
+- `activity-log/` - JSONL activity logs

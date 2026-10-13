@@ -1,12 +1,4 @@
-- **New Effort**
-I want to evaluate the story an taks mgmt system in the AI-Work-Mgmt app.
-
-I want to be sure it has a solid interface defined.  I want to identify what the options would be for adding addition implementations.
-The current solution creates local files and uses the file system for managing the work on the stories and tasks.
-I want this effort to investigate the possibility of using alternative implementations - like one that uses jira API to create an manage in JIRA or some thing similar in github.  What other options might there be.
-
-Please plan and manage this effort - creating stories for investigation and work as needed (aith appropriate sub tasks). please assign the best agents for identifying initial stories and for performing investigation.
-
-Later after some investigat i expect stories to be identified for implmenting alternate implementations - but we also wil need stories to identify how this shoudl be organized in the code base - what interfaces should be defined and how the code should be organized to support multiple implementations.  We will also need stories for testing and documentation.
-
-
+*** Create Stories ***
+ I see the latest story suggestions in the Project Planning Artifacts.
+ Please create the stories in the backlog based on the suggestions in the Project Planning Artifacts.
+ Can you now create the stories in the backlog based on what is in the project planning artifacts?  When will finally create stories in the backlog.

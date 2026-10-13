@@ -1,9 +1,16 @@
 ---
 name: visual-summary
-description: How to present deliverable information as visually appealing ASCII summaries
+description: DEPRECATED - Merged into output-formatting skill. Use output-formatting instead.
+user-invocable: false
+deprecated: true
+superseded-by: output-formatting
 ---
 
 # Visual Summary
+
+> **DEPRECATED**: This skill has been merged into `output-formatting`. See `.agent/skills/output-formatting/SKILL.md` for the combined skill.
+
+---
 
 Cross-cutting skill for generating visually appealing ASCII-art summaries of any deliverable. Use this at the end of any step to present information in a way that is easy to scan and pleasant to read.
 

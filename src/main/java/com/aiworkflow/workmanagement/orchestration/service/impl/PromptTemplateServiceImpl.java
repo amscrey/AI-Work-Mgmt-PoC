@@ -39,9 +39,15 @@ public class PromptTemplateServiceImpl implements PromptTemplateService {
         return buildPrompt(context, PromptOperation.TEST_STRATEGY);
     }
 
+    private static final String PROJECT_PLANNING_ID = "PROJECT-PLANNING";
+
     private String buildPrompt(OrchestrationContext context, PromptOperation operation) {
         Story story = context.getStory();
         StringBuilder prompt = new StringBuilder();
+
+        // Check if this is PROJECT-PLANNING
+        boolean isProjectPlanning = story != null &&
+            PROJECT_PLANNING_ID.equalsIgnoreCase(story.getId().getValue());
 
         appendHeader(prompt, operation, context.getWorkIntent());
         appendStorySection(prompt, story);
@@ -54,7 +60,7 @@ public class PromptTemplateServiceImpl implements PromptTemplateService {
             appendReferenceSection(prompt, context.getReferenceFiles());
         }
 
-        appendInstructionSection(prompt, operation);
+        appendInstructionSection(prompt, operation, isProjectPlanning);
 
         return prompt.toString();
     }
@@ -106,9 +112,25 @@ public class PromptTemplateServiceImpl implements PromptTemplateService {
         prompt.append('\n');
     }
 
-    private void appendInstructionSection(StringBuilder prompt, PromptOperation operation) {
+    private void appendInstructionSection(StringBuilder prompt, PromptOperation operation, boolean isProjectPlanning) {
         prompt.append("## Instructions").append('\n');
         prompt.append(operation.getInstructions()).append('\n');
+
+        // Add PROJECT-PLANNING specific instructions for story generation
+        if (isProjectPlanning && operation == PromptOperation.DESIGN) {
+            prompt.append("\n### Story Generation Format\n");
+            prompt.append("When suggesting stories for the backlog, use this exact format for each story:\n\n");
+            prompt.append("```\n");
+            prompt.append("## STORY-XXX: Story Title Here\n\n");
+            prompt.append("Description of what this story accomplishes and why it's needed.\n\n");
+            prompt.append("**Acceptance Criteria**:\n");
+            prompt.append("- Criterion 1\n");
+            prompt.append("- Criterion 2\n");
+            prompt.append("```\n\n");
+            prompt.append("This format allows automatic story creation from your suggestions.\n");
+            prompt.append("Use sequential numbering starting from STORY-101.\n\n");
+        }
+
         prompt.append("- Respond in Markdown with headings and bullet lists.\n");
         prompt.append("- Use short sections and avoid overly long paragraphs.\n");
     }

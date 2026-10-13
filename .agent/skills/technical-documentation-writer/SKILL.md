@@ -1,6 +1,7 @@
 ---
 name: technical-documentation-writer
 description: Write clear, accurate technical documentation including JavaDocs, API docs, README files, architecture docs, and how-to guides. Use when documenting code, APIs, system architecture, or creating developer-facing documentation.
+user-invocable: false
 ---
 
 # Technical Documentation Writer

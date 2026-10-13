@@ -2,6 +2,7 @@ package com.aiworkflow.workmanagement.api;
 
 import com.aiworkflow.workmanagement.api.dto.OrchestrationRunRequest;
 import com.aiworkflow.workmanagement.application.service.CommentService;
+import com.aiworkflow.workmanagement.application.service.ProjectPlanningService;
 import com.aiworkflow.workmanagement.orchestration.domain.ExecutionOutcome;
 import com.aiworkflow.workmanagement.orchestration.domain.OrchestrationRequest;
 import com.aiworkflow.workmanagement.orchestration.domain.OrchestrationResult;
@@ -46,6 +47,9 @@ class OrchestrationControllerTest {
 
     @MockBean
     private CommentService commentService;
+
+    @MockBean
+    private ProjectPlanningService projectPlanningService;
 
     @Test
     void startsRunAndReturnsExecutionId() throws Exception {

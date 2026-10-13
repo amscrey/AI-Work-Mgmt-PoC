@@ -1,3 +1,9 @@
+---
+name: workflow-architect
+description: Design and maintain the generic workflow management model for AI-orchestrated project delivery. Defines how work items move through lifecycle stages.
+user-invocable: false
+---
+
 # Skill: Workflow Architect
 
 ## Purpose

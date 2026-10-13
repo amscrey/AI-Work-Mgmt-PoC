@@ -1,9 +1,16 @@
 ---
 name: markdown-copy-paste
-description: Ensures deliverables and structured content are presented in clear, copy-friendly Markdown code blocks for easy human consumption.
+description: DEPRECATED - Merged into output-formatting skill. Use output-formatting instead.
+user-invocable: false
+deprecated: true
+superseded-by: output-formatting
 ---
 
 # Markdown Copy-Paste Communication
+
+> **DEPRECATED**: This skill has been merged into `output-formatting`. See `.agent/skills/output-formatting/SKILL.md` for the combined skill.
+
+---
 
 This skill defines the standard for presenting information to the human user in a way that is immediately usable and copy-paste friendly.
 

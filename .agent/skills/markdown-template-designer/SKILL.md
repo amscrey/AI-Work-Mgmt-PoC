@@ -1,6 +1,7 @@
 ---
 name: markdown-template-designer
 description: Design structured markdown templates with YAML frontmatter metadata for work items and artifacts. Use when creating story templates, task templates, artifact templates, or defining metadata contracts.
+user-invocable: false
 ---
 
 # Markdown Template Designer

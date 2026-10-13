@@ -17,7 +17,8 @@ class StateGraphBuilderTest {
 
     @Test
     void shouldAccumulateArtifactsAcrossNodesWithAppenderReducer() {
-        StateGraphBuilder builder = new StateGraphBuilder();
+        // Pass null for CommentService since this test doesn't need comment creation
+        StateGraphBuilder builder = new StateGraphBuilder(null);
 
         List<NodeAction> nodes = Arrays.asList(
             state -> addArtifact(state, "artifact-1", "researcher"),

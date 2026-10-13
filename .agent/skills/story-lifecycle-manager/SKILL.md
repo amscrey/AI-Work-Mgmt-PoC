@@ -1,3 +1,9 @@
+---
+name: story-lifecycle-manager
+description: Manage the lifecycle of story-level work items from creation through completion. Enforces state transitions, readiness rules, quality gates, and evidence requirements.
+user-invocable: false
+---
+
 # Skill: Story Lifecycle Manager
 
 > NOTE: Refer to `.agent/process/filesystem-contract.md` (human) and `.agent/process/filesystem-contract.json` (machine) for canonical directory ↔ state mappings and validation commands.

@@ -1,6 +1,7 @@
 ---
 name: java-developer
 description: Implement production-quality Java code from architectural designs. Use when writing Java classes, implementing services/repositories, writing Spring Boot configuration, or translating designs into working code.
+user-invocable: false
 ---
 
 # Java Developer

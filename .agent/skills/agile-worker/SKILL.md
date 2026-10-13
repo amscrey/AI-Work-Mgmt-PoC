@@ -1,6 +1,7 @@
 ---
 name: agile-worker
 description: Enforces proper agile workflow for story lifecycle management. Ensures stories are prioritized before work begins, activities are logged, and progress is documented via comments.
+user-invocable: false
 ---
 
 # Agile Worker Skill
@@ -11,10 +12,12 @@ Enforces proper agile workflow for the AI Work Management Platform.
 
 ### Filesystem = Source of Truth
 
+> **Note**: `<workspace>` refers to your project's workspace directory (e.g., `expandedStoryMgr`, `inventory-system`). Replace with your actual path.
+
 **Directory structure MUST match state:**
-- `backlog/STORY-XXX/` → `prioritizationState: "BACKLOG"`
-- `prioritized/STORY-XXX/` → `prioritizationState: "PRIORITIZED"`
-- `done/STORY-XXX/` → `workflowState: "DONE"`
+- `<workspace>/backlog/STORY-XXX/` → `prioritizationState: "BACKLOG"`
+- `<workspace>/prioritized/STORY-XXX/` → `prioritizationState: "PRIORITIZED"`
+- `<workspace>/done/STORY-XXX/` → `workflowState: "DONE"`
 
 ### Before Starting ANY Work on a Story
 
@@ -25,7 +28,7 @@ Enforces proper agile workflow for the AI Work Management Platform.
    - ❌ STOP - Do not start work
    - ✅ Move to PRIORITIZED first:
      - Update JSON: `"prioritizationState": "PRIORITIZED"`
-     - **Move directory**: `mv backlog/STORY-XXX prioritized/STORY-XXX`
+     - **Move directory**: `mv <workspace>/backlog/STORY-XXX <workspace>/prioritized/STORY-XXX`
      - Add comment explaining why prioritized
    - 📢 Inform user: "Moved STORY-XXX from BACKLOG to PRIORITIZED"
 3. **If PRIORITIZED** AND assignedTo role-name: ✅ Proceed
@@ -75,7 +78,7 @@ Enforces proper agile workflow for the AI Work Management Platform.
 ```
 **CRITICAL: Move directory to done/**
 ```bash
-mv prioritized/STORY-XXX done/STORY-XXX
+mv <workspace>/prioritized/STORY-XXX <workspace>/done/STORY-XXX
 ```
 
 **2. Add Final Comment**

@@ -1,6 +1,7 @@
 ---
 name: java-spring-architect
 description: Design Java Spring Boot application architecture with clean separation of concerns. Use when starting new Spring Boot projects, designing service layers, planning package structure, or applying domain-driven design patterns.
+user-invocable: false
 ---
 
 # Java Spring Architect

@@ -40,9 +40,19 @@ This guide shows how a user can run the workflow app, use PROJECT-PLANNING for i
 
 - Java 17+
 - Maven 3+
-- A workspace folder (e.g., `AI-Work-Mgmt-LLM-Orch-AddOn/`)
+- A workspace folder (e.g., `my-project-workspace/`)
 - REST API is available (see `etc/docs/REST-API.md`)
 - Execution mode configured (`orchestration.execution-mode=template` recommended for first run)
+
+## Terminology
+
+> **`<workspace>`** in this document refers to your project's workspace directory path. This is a **placeholder** - replace it with your actual workspace name (e.g., `expandedStoryMgr`, `inventory-system`, `my-game-project`).
+>
+> **Do NOT create a directory literally named "workspace"** - use a descriptive name for your project.
+>
+> Configure your workspace path via:
+> - Environment variable: `WORKSPACE_ROOT=/path/to/my-project-workspace`
+> - Or in `application.yml`: `workmanagement.workspace-root: /path/to/my-project-workspace`
 
 ## Quick Start (REST)
 
@@ -94,7 +104,7 @@ echo "Based on the analysis, prioritize:
 Defer for later:
 - Advanced reporting
 - Integration with external systems" \
-> workspace/prioritized/PROJECT-PLANNING/artifacts/human-response__human__$(date -u +%Y-%m-%dT%H%M%SZ).md
+> <workspace>/prioritized/PROJECT-PLANNING/artifacts/human-response__human__$(date -u +%Y-%m-%dT%H%M%SZ).md
 ```
 
 Then send another prompt to process the feedback:
@@ -149,7 +159,23 @@ curl -X POST http://localhost:8080/api/v1/stories \
   }'
 ```
 
-**Option B: Let orchestrator create stories** (when using LLM mode with designer node):
+**Option B: Create stories from PROJECT-PLANNING artifacts**:
+
+First, preview story suggestions extracted from PROJECT-PLANNING artifacts:
+
+```bash
+curl http://localhost:8080/api/v1/project-planning/suggestions
+```
+
+Then create stories from the suggestions:
+
+```bash
+curl -X POST 'http://localhost:8080/api/v1/project-planning/create-stories?requestedBy=human'
+```
+
+This parses PROJECT-PLANNING artifacts for story patterns (e.g., `## STORY-XXX: Title`, numbered lists with descriptions) and creates stories in the backlog.
+
+**Option C: Let orchestrator create stories** (when using LLM mode with designer node):
 
 The orchestrator can create stories automatically based on PROJECT-PLANNING artifacts.
 
@@ -375,13 +401,13 @@ Include:
 ### Quick Checks
 ```bash
 # View PROJECT-PLANNING artifacts
-ls -la workspace/prioritized/PROJECT-PLANNING/artifacts/
+ls -la <workspace>/prioritized/PROJECT-PLANNING/artifacts/
 
 # View story artifacts
-ls -la workspace/prioritized/STORY-100/artifacts/
+ls -la <workspace>/prioritized/STORY-100/artifacts/
 
 # Check latest activity logs
-tail -f workspace/activity-log/*.jsonl
+tail -f <workspace>/activity-log/*.jsonl
 
 # Check token usage
 curl http://localhost:8080/api/v1/stories/PROJECT-PLANNING/usage

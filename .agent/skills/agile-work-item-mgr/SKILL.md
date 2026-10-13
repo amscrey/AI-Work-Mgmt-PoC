@@ -1,6 +1,7 @@
 ---
 name: agile-work-item-mgr
 description: Orchestrator-specific agile workflow management for creating, updating, and transitioning work items with proper filesystem synchronization
+user-invocable: false
 ---
 # Agile Work Item Manager Skill
 
@@ -319,6 +320,24 @@ find prioritized/ -name "story.json" -exec grep -l '"workflowState" : "IN_PROGRE
 **Prioritize**: PRIORITIZED + mv backlog→prioritized + comment + log
 **Assign**: IN_PROGRESS + assignedTo + comment + log
 **Complete**: DONE + completedBy/At + mv prioritized→done + comment + log
+
+---
+
+## Scripts (Deterministic Operations)
+
+Use these scripts for filesystem operations instead of inline commands:
+
+### Move Story Between States
+```bash
+./scripts/move-story.sh <workspace> <story-id> <from> <to>
+# Example: ./scripts/move-story.sh /path/to/workspace STORY-001 backlog prioritized
+```
+
+### Validate Story Location
+```bash
+./scripts/validate-story-location.sh <workspace> <story-id>
+# Example: ./scripts/validate-story-location.sh /path/to/workspace STORY-001
+```
 
 **Filesystem Structure**:
 ```

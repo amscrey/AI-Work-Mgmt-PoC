@@ -1,6 +1,7 @@
 ---
 name: requirements-manager
 description: Gather, analyze, refine, and validate requirements with human collaboration. Use when starting new projects, clarifying ambiguous requirements, identifying concerns, mapping requirements to agents, or documenting refined specifications.
+user-invocable: false
 ---
 
 # Requirements Manager

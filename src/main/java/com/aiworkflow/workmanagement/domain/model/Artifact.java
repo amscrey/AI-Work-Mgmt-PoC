@@ -4,19 +4,23 @@ import com.aiworkflow.workmanagement.domain.valueobject.ArtifactName;
 import com.aiworkflow.workmanagement.domain.valueobject.StoryId;
 import java.io.Serializable;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Objects;
 
 /**
  * Entity representing an Artifact in the workflow system.
  * Artifacts are files or documents produced during the completion of a Story.
+ * <p>
+ * Note: The file path is stored as a String internally for serialization compatibility
+ * with langgraph4j's state serialization. Use {@link #getFilePath()} to get a Path object.
  */
 public class Artifact implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
     private final ArtifactName name;
     private final StoryId storyId;
-    private final Path filePath;
+    private final String filePathString; // Stored as String for serialization
     private ArtifactType type;
     private FileFormat format;
     private String description;
@@ -42,7 +46,7 @@ public class Artifact implements Serializable {
 
         this.name = name;
         this.storyId = storyId;
-        this.filePath = filePath;
+        this.filePathString = filePath.toString(); // Store as String for serialization
         this.createdBy = createdBy;
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
@@ -63,7 +67,14 @@ public class Artifact implements Serializable {
     }
 
     public Path getFilePath() {
-        return filePath;
+        return Paths.get(filePathString);
+    }
+
+    /**
+     * Gets the file path as a String (for serialization compatibility).
+     */
+    public String getFilePathString() {
+        return filePathString;
     }
 
     public ArtifactType getType() {

@@ -345,4 +345,104 @@ class FileBasedStoryRepositoryIT {
             assertThat(loaded.getAcceptanceCriteria()).containsExactly("AC1: Should work", "AC2: Should be fast");
         }
     }
+
+    @Nested
+    @DisplayName("Artifact Loading Tests")
+    class ArtifactLoadingTests {
+
+        @Test
+        @DisplayName("Should load artifacts when retrieving story")
+        void shouldLoadArtifactsWhenRetrievingStory() throws IOException {
+            // Given - create story and save
+            Story story = new Story(
+                new StoryId("STORY-501"),
+                "Story with artifacts",
+                "Summary",
+                WorkflowState.TODO,
+                PrioritizationState.PRIORITIZED
+            );
+            repository.save(story);
+
+            // Create artifacts directory and add artifact files
+            Path artifactsDir = Paths.get(TEST_WORKSPACE, "prioritized", "STORY-501", "artifacts");
+            Files.createDirectories(artifactsDir);
+
+            // Write artifacts following the naming convention: {name}__{role}__{timestamp}.{ext}
+            Path artifact1 = artifactsDir.resolve("research-findings__researcher__2026-05-01T100000Z.md");
+            Files.writeString(artifact1, "# Research Findings\n\nSome research content...");
+
+            Path artifact2 = artifactsDir.resolve("design-spec__designer__2026-05-01T110000Z.md");
+            Files.writeString(artifact2, "# Design Specification\n\nSome design content...");
+
+            // When - retrieve story
+            Optional<Story> retrieved = repository.findById(new StoryId("STORY-501"));
+
+            // Then - artifacts should be loaded
+            assertThat(retrieved).isPresent();
+            Story loaded = retrieved.get();
+            assertThat(loaded.getArtifacts()).hasSize(2);
+            assertThat(loaded.getArtifacts())
+                .extracting(a -> a.getName().getDescriptiveName())
+                .containsExactlyInAnyOrder("research-findings", "design-spec");
+        }
+
+        @Test
+        @DisplayName("Should ignore non-artifact files in artifacts directory")
+        void shouldIgnoreNonArtifactFiles() throws IOException {
+            // Given
+            Story story = new Story(
+                new StoryId("STORY-502"),
+                "Story with mixed files",
+                "Summary",
+                WorkflowState.TODO,
+                PrioritizationState.PRIORITIZED
+            );
+            repository.save(story);
+
+            Path artifactsDir = Paths.get(TEST_WORKSPACE, "prioritized", "STORY-502", "artifacts");
+            Files.createDirectories(artifactsDir);
+
+            // Valid artifact
+            Path validArtifact = artifactsDir.resolve("notes__researcher__2026-05-01T100000Z.md");
+            Files.writeString(validArtifact, "Valid artifact content");
+
+            // Invalid files (should be ignored)
+            Path invalidFile1 = artifactsDir.resolve("random-file.txt");
+            Files.writeString(invalidFile1, "Not an artifact");
+
+            Path invalidFile2 = artifactsDir.resolve("README.md");
+            Files.writeString(invalidFile2, "Also not an artifact");
+
+            // When
+            Optional<Story> retrieved = repository.findById(new StoryId("STORY-502"));
+
+            // Then - only valid artifact should be loaded
+            assertThat(retrieved).isPresent();
+            Story loaded = retrieved.get();
+            assertThat(loaded.getArtifacts()).hasSize(1);
+            assertThat(loaded.getArtifacts().get(0).getName().getValue())
+                .isEqualTo("notes__researcher__2026-05-01T100000Z.md");
+        }
+
+        @Test
+        @DisplayName("Should handle missing artifacts directory gracefully")
+        void shouldHandleMissingArtifactsDirectory() {
+            // Given - story without artifacts directory
+            Story story = new Story(
+                new StoryId("STORY-503"),
+                "Story without artifacts",
+                "Summary",
+                WorkflowState.TODO,
+                PrioritizationState.BACKLOG
+            );
+            repository.save(story);
+
+            // When
+            Optional<Story> retrieved = repository.findById(new StoryId("STORY-503"));
+
+            // Then - should return story with empty artifacts
+            assertThat(retrieved).isPresent();
+            assertThat(retrieved.get().getArtifacts()).isEmpty();
+        }
+    }
 }
